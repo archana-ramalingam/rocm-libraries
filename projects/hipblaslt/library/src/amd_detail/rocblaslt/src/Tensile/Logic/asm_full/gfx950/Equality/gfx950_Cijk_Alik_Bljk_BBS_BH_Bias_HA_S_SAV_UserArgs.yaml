@@ -2,15 +2,15 @@
 - gfx950
 - gfx950
 - [Device 75a0]
-- Activation: false
+- Activation: true
   ActivationComputeDataType: 0
   ActivationNoGuard: false
-  ActivationType: none
+  ActivationType: hipblaslt_all
   AllowNoFreeDims: false
   AssignedDerivedParameters: true
   Batched: true
   BetaOnlyUseBias: false
-  BiasDataTypeList: []
+  BiasDataTypeList: [0, 7]
   BiasSrc: D
   ComplexConjugateA: false
   ComplexConjugateB: false
@@ -71,25 +71,25 @@
   TransposeA: 1
   TransposeB: 0
   UseBeta: true
-  UseBias: 0
+  UseBias: 1
   UseE: false
   UseInitialStridesAB: false
   UseInitialStridesCD: false
   UseScaleAB: ''
-  UseScaleAlphaVec: 0
+  UseScaleAlphaVec: 1
   UseScaleCD: false
 - - 1LDSBuffer: 0
     ActivationAlt: false
-    ActivationFuncCall: false
+    ActivationFuncCall: true
     ActivationFused: true
     AssertAIGreaterThanEqual: -1
     AssertAILessThanEqual: -1
     AssertFree0ElementMultiple: 1
     AssertFree1ElementMultiple: 1
-    AssertSummationElementMultiple: 64
+    AssertSummationElementMultiple: 1
     AssignedDerivedParameters: true
     AssignedProblemIndependentDerivedParameters: true
-    BaseName: Custom_Cijk_Alik_Bljk_BBS_BH_MT256x256x64_MI16x16x1_UserArgs_shortname0_gfx950
+    BaseName: Custom_Cijk_Alik_Bljk_BBS_BH_Bias_HA_S_SAV_UserArgs_MT256x256x64_MI16x16x1_shortname0_gfx950
     BufferLoad: true
     BufferStore: true
     CUCount: null
@@ -97,7 +97,7 @@
     ClusterLocalRead: 1
     CodeObjectVersion: '4'
     ConvertAfterDS: false
-    CustomKernelName: 'Custom_Cijk_Alik_Bljk_BBS_BH_MT256x256x64_MI16x16x1_UserArgs_shortname0_gfx950'
+    CustomKernelName: 'Custom_Cijk_Alik_Bljk_BBS_BH_Bias_HA_S_SAV_UserArgs_MT256x256x64_MI16x16x1_shortname0_gfx950'
     DebugStreamK: 0
     DepthU: 64
     DirectToLds: true
@@ -132,7 +132,7 @@
       SupportUserGSU: true, UseUniversalArgs: true}
     Kernel: true
     KernelLanguage: Assembly
-    KernelNameMin: Custom_Cijk_Alik_Bljk_BBS_BH_MT256x256x64_MI16x16x1_UserArgs_shortname0_gfx950
+    KernelNameMin: Custom_Cijk_Alik_Bljk_BBS_BH_Bias_HA_S_SAV_UserArgs_MT256x256x64_MI16x16x1_shortname0_gfx950
     LDSTrInst: false
     LSCA: 64
     LSCB: 64
@@ -203,9 +203,9 @@
     MbskPrefetchOpt: 0
     NoLdsWriteCode: true
     NoReject: false
-    NoTailLoop: true
-    NonDTLTailLoopA: false
-    NonDTLTailLoopB: false
+    NoTailLoop: false
+    NonDTLTailLoopA: true
+    NonDTLTailLoopB: true
     NonTemporal: -1
     NonTemporalA: 0
     NonTemporalB: 0
@@ -234,15 +234,15 @@
     PrefetchLocalRead: 1
     PreloadKernArgs: true
     ProblemType:
-      Activation: false
+      Activation: true
       ActivationComputeDataType: 0
       ActivationNoGuard: false
-      ActivationType: none
+      ActivationType: hipblaslt_all
       AllowNoFreeDims: false
       AssignedDerivedParameters: true
       Batched: true
       BetaOnlyUseBias: false
-      BiasDataTypeList: []
+      BiasDataTypeList: [0, 7]
       BiasSrc: D
       ComplexConjugateA: false
       ComplexConjugateB: false
@@ -303,18 +303,18 @@
       TransposeA: 1
       TransposeB: 0
       UseBeta: true
-      UseBias: 0
+      UseBias: 1
       UseE: false
       UseInitialStridesAB: false
       UseInitialStridesCD: false
       UseScaleAB: ''
-      UseScaleAlphaVec: 0
+      UseScaleAlphaVec: 1
       UseScaleCD: false
     ScheduleGlobalRead: 1
     ScheduleIterAlg: 3
     ScheduleLocalWrite: 1
     SolutionIndex: 0
-    SolutionNameMin: Custom_Cijk_Alik_Bljk_BBS_BH_MT256x256x64_MI16x16x1_UserArgs_shortname0_gfx950
+    SolutionNameMin: Custom_Cijk_Alik_Bljk_BBS_BH_Bias_HA_S_SAV_UserArgs_MT256x256x64_MI16x16x1_shortname0_gfx950
     SourceSwap: 1
     StaggerU: 0
     StaggerUMapping: 0
@@ -382,16 +382,16 @@
     tailLoopOptB: false
   - 1LDSBuffer: 0
     ActivationAlt: false
-    ActivationFuncCall: false
+    ActivationFuncCall: true
     ActivationFused: true
     AssertAIGreaterThanEqual: -1
     AssertAILessThanEqual: -1
     AssertFree0ElementMultiple: 1
     AssertFree1ElementMultiple: 1
-    AssertSummationElementMultiple: 64
+    AssertSummationElementMultiple: 1
     AssignedDerivedParameters: true
     AssignedProblemIndependentDerivedParameters: true
-    BaseName: Custom_Cijk_Alik_Bljk_BBS_BH_MT256x256x64_MI16x16x1_UserArgs_shortname1_gfx950
+    BaseName: Custom_Cijk_Alik_Bljk_BBS_BH_Bias_HA_S_SAV_UserArgs_MT256x256x64_MI16x16x1_shortname1_gfx950
     BufferLoad: true
     BufferStore: true
     CUCount: null
@@ -399,7 +399,7 @@
     ClusterLocalRead: 1
     CodeObjectVersion: '4'
     ConvertAfterDS: false
-    CustomKernelName: 'Custom_Cijk_Alik_Bljk_BBS_BH_MT256x256x64_MI16x16x1_UserArgs_shortname1_gfx950'
+    CustomKernelName: 'Custom_Cijk_Alik_Bljk_BBS_BH_Bias_HA_S_SAV_UserArgs_MT256x256x64_MI16x16x1_shortname1_gfx950'
     DebugStreamK: 0
     DepthU: 64
     DirectToLds: true
@@ -434,7 +434,7 @@
       SupportUserGSU: true, UseUniversalArgs: true}
     Kernel: true
     KernelLanguage: Assembly
-    KernelNameMin: Custom_Cijk_Alik_Bljk_BBS_BH_MT256x256x64_MI16x16x1_UserArgs_shortname1_gfx950
+    KernelNameMin: Custom_Cijk_Alik_Bljk_BBS_BH_Bias_HA_S_SAV_UserArgs_MT256x256x64_MI16x16x1_shortname1_gfx950
     LDSTrInst: false
     LSCA: 64
     LSCB: 64
@@ -505,9 +505,9 @@
     MbskPrefetchOpt: 0
     NoLdsWriteCode: true
     NoReject: false
-    NoTailLoop: true
-    NonDTLTailLoopA: false
-    NonDTLTailLoopB: false
+    NoTailLoop: false
+    NonDTLTailLoopA: true
+    NonDTLTailLoopB: true
     NonTemporal: -1
     NonTemporalA: 0
     NonTemporalB: 0
@@ -536,15 +536,15 @@
     PrefetchLocalRead: 1
     PreloadKernArgs: true
     ProblemType:
-      Activation: false
+      Activation: true
       ActivationComputeDataType: 0
       ActivationNoGuard: false
-      ActivationType: none
+      ActivationType: hipblaslt_all
       AllowNoFreeDims: false
       AssignedDerivedParameters: true
       Batched: true
       BetaOnlyUseBias: false
-      BiasDataTypeList: []
+      BiasDataTypeList: [0, 7]
       BiasSrc: D
       ComplexConjugateA: false
       ComplexConjugateB: false
@@ -605,18 +605,18 @@
       TransposeA: 1
       TransposeB: 0
       UseBeta: true
-      UseBias: 0
+      UseBias: 1
       UseE: false
       UseInitialStridesAB: false
       UseInitialStridesCD: false
       UseScaleAB: ''
-      UseScaleAlphaVec: 0
+      UseScaleAlphaVec: 1
       UseScaleCD: false
     ScheduleGlobalRead: 1
     ScheduleIterAlg: 3
     ScheduleLocalWrite: 1
     SolutionIndex: 1
-    SolutionNameMin: Custom_Cijk_Alik_Bljk_BBS_BH_MT256x256x64_MI16x16x1_UserArgs_shortname1_gfx950
+    SolutionNameMin: Custom_Cijk_Alik_Bljk_BBS_BH_Bias_HA_S_SAV_UserArgs_MT256x256x64_MI16x16x1_shortname1_gfx950
     SourceSwap: 1
     StaggerU: 0
     StaggerUMapping: 0
@@ -684,16 +684,16 @@
     tailLoopOptB: false
   - 1LDSBuffer: 0
     ActivationAlt: false
-    ActivationFuncCall: false
+    ActivationFuncCall: true
     ActivationFused: true
     AssertAIGreaterThanEqual: -1
     AssertAILessThanEqual: -1
     AssertFree0ElementMultiple: 1
     AssertFree1ElementMultiple: 1
-    AssertSummationElementMultiple: 64
+    AssertSummationElementMultiple: 1
     AssignedDerivedParameters: true
     AssignedProblemIndependentDerivedParameters: true
-    BaseName: Custom_Cijk_Alik_Bljk_BBS_BH_MT256x256x64_MI16x16x1_UserArgs_shortname1_gfx950
+    BaseName: Custom_Cijk_Alik_Bljk_BBS_BH_Bias_HA_S_SAV_UserArgs_MT256x256x64_MI16x16x1_shortname1_gfx950
     BufferLoad: true
     BufferStore: true
     CUCount: null
@@ -701,7 +701,7 @@
     ClusterLocalRead: 1
     CodeObjectVersion: '4'
     ConvertAfterDS: false
-    CustomKernelName: 'Custom_Cijk_Alik_Bljk_BBS_BH_MT256x256x64_MI16x16x1_UserArgs_shortname1_gfx950'
+    CustomKernelName: 'Custom_Cijk_Alik_Bljk_BBS_BH_Bias_HA_S_SAV_UserArgs_MT256x256x64_MI16x16x1_shortname1_gfx950'
     DebugStreamK: 0
     DepthU: 64
     DirectToLds: true
@@ -736,7 +736,7 @@
       SupportUserGSU: true, UseUniversalArgs: true}
     Kernel: true
     KernelLanguage: Assembly
-    KernelNameMin: Custom_Cijk_Alik_Bljk_BBS_BH_MT256x256x64_MI16x16x1_UserArgs_shortname1_gfx950
+    KernelNameMin: Custom_Cijk_Alik_Bljk_BBS_BH_Bias_HA_S_SAV_UserArgs_MT256x256x64_MI16x16x1_shortname1_gfx950
     LDSTrInst: false
     LSCA: 64
     LSCB: 64
@@ -807,9 +807,9 @@
     MbskPrefetchOpt: 0
     NoLdsWriteCode: true
     NoReject: false
-    NoTailLoop: true
-    NonDTLTailLoopA: false
-    NonDTLTailLoopB: false
+    NoTailLoop: false
+    NonDTLTailLoopA: true
+    NonDTLTailLoopB: true
     NonTemporal: -1
     NonTemporalA: 0
     NonTemporalB: 0
@@ -838,15 +838,15 @@
     PrefetchLocalRead: 1
     PreloadKernArgs: true
     ProblemType:
-      Activation: false
+      Activation: true
       ActivationComputeDataType: 0
       ActivationNoGuard: false
-      ActivationType: none
+      ActivationType: hipblaslt_all
       AllowNoFreeDims: false
       AssignedDerivedParameters: true
       Batched: true
       BetaOnlyUseBias: false
-      BiasDataTypeList: []
+      BiasDataTypeList: [0, 7]
       BiasSrc: D
       ComplexConjugateA: false
       ComplexConjugateB: false
@@ -907,18 +907,18 @@
       TransposeA: 1
       TransposeB: 0
       UseBeta: true
-      UseBias: 0
+      UseBias: 1
       UseE: false
       UseInitialStridesAB: false
       UseInitialStridesCD: false
       UseScaleAB: ''
-      UseScaleAlphaVec: 0
+      UseScaleAlphaVec: 1
       UseScaleCD: false
     ScheduleGlobalRead: 1
     ScheduleIterAlg: 3
     ScheduleLocalWrite: 1
     SolutionIndex: 2
-    SolutionNameMin: Custom_Cijk_Alik_Bljk_BBS_BH_MT256x256x64_MI16x16x1_UserArgs_shortname1_gfx950
+    SolutionNameMin: Custom_Cijk_Alik_Bljk_BBS_BH_Bias_HA_S_SAV_UserArgs_MT256x256x64_MI16x16x1_shortname1_gfx950
     SourceSwap: 1
     StaggerU: 0
     StaggerUMapping: 0
@@ -985,12 +985,8 @@
     tailLoopOptA: false
     tailLoopOptB: false
 - [2, 3, 0, 1]
-- - - [4096, 4096, 1, 8192]
+- - - [4096, 4096, 1, 16384]
     - [2, 0]
-  - - [4096, 4096, 1, 16384]
-    - [2, 0]
-  - - [8192, 8192, 1, 8192]
-    - [0, 0]
   - - [8192, 8192, 1, 16384]
     - [1, 0]
   - - [32000, 8192, 1, 8192]
