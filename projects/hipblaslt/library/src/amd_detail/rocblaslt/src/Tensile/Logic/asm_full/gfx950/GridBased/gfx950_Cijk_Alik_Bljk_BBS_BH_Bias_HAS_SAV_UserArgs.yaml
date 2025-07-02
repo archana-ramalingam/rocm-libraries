@@ -244134,7 +244134,7 @@
     tailLoopOptB: false
   - 1LDSBuffer: 0
     ActivationAlt: false
-    ActivationFuncCall: true
+    ActivationFuncCall: false
     ActivationFused: true
     AssertAIGreaterThanEqual: -1
     AssertAILessThanEqual: -1
@@ -244170,7 +244170,7 @@
     GlobalReadPerMfma: 1
     GlobalReadVectorWidthA: 8
     GlobalReadVectorWidthB: 8
-    GlobalSplitU: 1
+    GlobalSplitU: 0
     GlobalSplitUAlgorithm: MultipleBuffer
     GlobalSplitUCoalesced: false
     GlobalSplitUWorkGroupMappingRoundRobin: false
@@ -244183,7 +244183,7 @@
     InnerUnroll: 1
     InterleaveAlpha: 0
     InternalSupportParams: {KernArgsVersion: 2, SupportCustomStaggerU: true, SupportCustomWGM: true,
-      SupportUserGSU: true, UseUniversalArgs: true}
+      SupportUserGSU: false, UseUniversalArgs: true}
     Kernel: true
     KernelLanguage: Assembly
     KernelNameMin: Custom_Cijk_Alik_Bljk_BBS_BH_Bias_HA_S_SAV_UserArgs_MT256x256x64_MI16x16x1_shortname0_gfx950
@@ -244199,23 +244199,23 @@
     LdsBlockSizePerPadA: 1024
     LdsBlockSizePerPadB: 1024
     LdsBlockSizePerPadMetadata: 0
-    LdsBytesNoAmax: 133120
+    LdsBytesNoAmax: 135168
     LdsInitCVgprs: false
-    LdsNumBytes: 133120
-    LdsNumElementsAlignedA: 33280
-    LdsNumElementsAlignedB: 33280
+    LdsNumBytes: 135168
+    LdsNumElementsAlignedA: 33792
+    LdsNumElementsAlignedB: 33792
     LdsNumElementsAlignedMetadata: 0
     LdsOffsetA: 0
-    LdsOffsetA_Blk: 66560
-    LdsOffsetB: 33280
-    LdsOffsetB_Blk: 99840
+    LdsOffsetA_Blk: 67584
+    LdsOffsetB: 33792
+    LdsOffsetB_Blk: 101376
     LdsOffsetBias: 0
     LdsOffsetBiasGSU: 0
     LdsOffsetBiasNonGSU: 0
-    LdsOffsetMetadata: 33280
-    LdsOffsetMetadata_Blk: 99840
-    LdsPadA: 8
-    LdsPadB: 8
+    LdsOffsetMetadata: 33792
+    LdsOffsetMetadata_Blk: 101376
+    LdsPadA: 16
+    LdsPadB: 16
     LdsPadMetadata: 0
     LocalReadVectorWidth: 8
     LocalSplitU: 1
@@ -244225,13 +244225,11 @@
     LocalWriteUseSgprB: true
     LoopIters: 2
     LoopUnroll: 64
-    MFMA_BF16_1K: false
     MIArchVgpr: false
     MIBlock: [16, 16, 32, 1, 1, 1]
     MIInputPerThread: 8
     MIInputPerThreadA: 8
     MIInputPerThreadB: 8
-    MIInputPerThreadMetadata: 8
     MIOutputVectorWidth: 4
     MIRegPerOut: 1
     MIWaveGroup: [2, 2]
@@ -244264,7 +244262,7 @@
     NonTemporalA: 0
     NonTemporalB: 0
     NonTemporalC: 0
-    NonTemporalD: 4
+    NonTemporalD: 0
     NonTemporalE: 0
     NonTemporalMetadata: 0
     NonTemporalWS: 0
@@ -244369,16 +244367,16 @@
     ScheduleLocalWrite: 1
     SolutionIndex: 813
     SolutionNameMin: Custom_Cijk_Alik_Bljk_BBS_BH_Bias_HA_S_SAV_UserArgs_MT256x256x64_MI16x16x1_shortname0_gfx950
-    SourceSwap: 1
+    SourceSwap: false
     StaggerU: 0
     StaggerUMapping: 0
-    StaggerUStride: 0
+    StaggerUStride: 128
     StorePriorityOpt: false
     StoreRemapVectorWidth: 0
     StoreSwapAddr: true
     StoreSyncOpt: 0
-    StoreVectorWidth: 8
-    StreamK: 0
+    StoreVectorWidth: 4
+    StreamK: 3
     StreamKAtomic: 0
     StreamKXCCMapping: 0
     SubGroup0: 8
@@ -244386,7 +244384,7 @@
     SubGroupA: 8
     SubGroupB: 32
     SuppressNoLoadLoop: false
-    ThreadTile: [1, 1]
+    ThreadTile: [4, 4]
     ThreadTile0: 32
     ThreadTile1: 8
     ThreadTileA: 32
@@ -244412,17 +244410,17 @@
     WaveSeparateGlobalReadMetadata: 0
     WaveSplitK: false
     WavefrontSize: 64
-    WorkGroup: [32, 8, 1]
+    WorkGroup: [16, 16, 1]
     WorkGroupMapping: 32
     WorkGroupMappingXCC: 1
     WorkGroupMappingXCCGroup: -1
     WorkGroupReduction: false
-    WorkspaceCheck: [4, 0, 1]
+    WorkspaceCheck: [4, 0, 0]
     _DepthU: 64
     _DepthUA: 64
     _DepthUB: 64
     _DepthUMetadata: 64
-    _GlobalAccumulation: MultipleBuffer
+    _GlobalAccumulation: PartialsBuffer
     _UseSgprForGRO: 1
     _VectorStore: 1
     _WorkspaceSizePerElemBias: 0
@@ -244436,7 +244434,7 @@
     tailLoopOptB: false
   - 1LDSBuffer: 0
     ActivationAlt: false
-    ActivationFuncCall: true
+    ActivationFuncCall: false
     ActivationFused: true
     AssertAIGreaterThanEqual: -1
     AssertAILessThanEqual: -1
@@ -244445,7 +244443,7 @@
     AssertSummationElementMultiple: 1
     AssignedDerivedParameters: true
     AssignedProblemIndependentDerivedParameters: true
-    BaseName: Custom_Cijk_Alik_Bljk_BBS_BH_Bias_HA_S_SAV_UserArgs_MT256x256x64_MI16x16x1_shortname1_gfx950
+    BaseName: Custom_Cijk_Alik_Bljk_BBS_BH_Bias_HA_S_SAV_UserArgs_MT256x256x64_MI16x16x1_shortname0_gfx950
     BufferLoad: true
     BufferStore: true
     CUCount: null
@@ -244453,7 +244451,7 @@
     ClusterLocalRead: 1
     CodeObjectVersion: '4'
     ConvertAfterDS: false
-    CustomKernelName: Custom_Cijk_Alik_Bljk_BBS_BH_Bias_HA_S_SAV_UserArgs_MT256x256x64_MI16x16x1_shortname1_gfx950
+    CustomKernelName: Custom_Cijk_Alik_Bljk_BBS_BH_Bias_HA_S_SAV_UserArgs_MT256x256x64_MI16x16x1_shortname0_gfx950
     DebugStreamK: 0
     DepthU: 64
     DirectToLds: true
@@ -244472,7 +244470,7 @@
     GlobalReadPerMfma: 1
     GlobalReadVectorWidthA: 8
     GlobalReadVectorWidthB: 8
-    GlobalSplitU: 1
+    GlobalSplitU: 0
     GlobalSplitUAlgorithm: MultipleBuffer
     GlobalSplitUCoalesced: false
     GlobalSplitUWorkGroupMappingRoundRobin: false
@@ -244485,10 +244483,10 @@
     InnerUnroll: 1
     InterleaveAlpha: 0
     InternalSupportParams: {KernArgsVersion: 2, SupportCustomStaggerU: true, SupportCustomWGM: true,
-      SupportUserGSU: true, UseUniversalArgs: true}
+      SupportUserGSU: false, UseUniversalArgs: true}
     Kernel: true
     KernelLanguage: Assembly
-    KernelNameMin: Custom_Cijk_Alik_Bljk_BBS_BH_Bias_HA_S_SAV_UserArgs_MT256x256x64_MI16x16x1_shortname1_gfx950
+    KernelNameMin: Custom_Cijk_Alik_Bljk_BBS_BH_Bias_HA_S_SAV_UserArgs_MT256x256x64_MI16x16x1_shortname0_gfx950
     LDSTrInst: false
     LSCA: 64
     LSCB: 64
@@ -244501,23 +244499,23 @@
     LdsBlockSizePerPadA: 1024
     LdsBlockSizePerPadB: 1024
     LdsBlockSizePerPadMetadata: 0
-    LdsBytesNoAmax: 133120
+    LdsBytesNoAmax: 135168
     LdsInitCVgprs: false
-    LdsNumBytes: 133120
-    LdsNumElementsAlignedA: 33280
-    LdsNumElementsAlignedB: 33280
+    LdsNumBytes: 135168
+    LdsNumElementsAlignedA: 33792
+    LdsNumElementsAlignedB: 33792
     LdsNumElementsAlignedMetadata: 0
     LdsOffsetA: 0
-    LdsOffsetA_Blk: 66560
-    LdsOffsetB: 33280
-    LdsOffsetB_Blk: 99840
+    LdsOffsetA_Blk: 67584
+    LdsOffsetB: 33792
+    LdsOffsetB_Blk: 101376
     LdsOffsetBias: 0
     LdsOffsetBiasGSU: 0
     LdsOffsetBiasNonGSU: 0
-    LdsOffsetMetadata: 33280
-    LdsOffsetMetadata_Blk: 99840
-    LdsPadA: 8
-    LdsPadB: 8
+    LdsOffsetMetadata: 33792
+    LdsOffsetMetadata_Blk: 101376
+    LdsPadA: 16
+    LdsPadB: 16
     LdsPadMetadata: 0
     LocalReadVectorWidth: 8
     LocalSplitU: 1
@@ -244527,13 +244525,11 @@
     LocalWriteUseSgprB: true
     LoopIters: 2
     LoopUnroll: 64
-    MFMA_BF16_1K: false
     MIArchVgpr: false
     MIBlock: [16, 16, 32, 1, 1, 1]
     MIInputPerThread: 8
     MIInputPerThreadA: 8
     MIInputPerThreadB: 8
-    MIInputPerThreadMetadata: 8
     MIOutputVectorWidth: 4
     MIRegPerOut: 1
     MIWaveGroup: [2, 2]
@@ -244566,7 +244562,7 @@
     NonTemporalA: 0
     NonTemporalB: 0
     NonTemporalC: 0
-    NonTemporalD: 4
+    NonTemporalD: 0
     NonTemporalE: 0
     NonTemporalMetadata: 0
     NonTemporalWS: 0
@@ -244670,17 +244666,17 @@
     ScheduleIterAlg: 3
     ScheduleLocalWrite: 1
     SolutionIndex: 814
-    SolutionNameMin: Custom_Cijk_Alik_Bljk_BBS_BH_Bias_HA_S_SAV_UserArgs_MT256x256x64_MI16x16x1_shortname1_gfx950
-    SourceSwap: 1
+    SolutionNameMin: Custom_Cijk_Alik_Bljk_BBS_BH_Bias_HA_S_SAV_UserArgs_MT256x256x64_MI16x16x1_shortname0_gfx950
+    SourceSwap: false
     StaggerU: 0
     StaggerUMapping: 0
-    StaggerUStride: 0
+    StaggerUStride: 128
     StorePriorityOpt: false
     StoreRemapVectorWidth: 0
     StoreSwapAddr: true
     StoreSyncOpt: 0
-    StoreVectorWidth: 8
-    StreamK: 0
+    StoreVectorWidth: 4
+    StreamK: 3
     StreamKAtomic: 0
     StreamKXCCMapping: 0
     SubGroup0: 8
@@ -244688,7 +244684,7 @@
     SubGroupA: 8
     SubGroupB: 32
     SuppressNoLoadLoop: false
-    ThreadTile: [1, 1]
+    ThreadTile: [4, 4]
     ThreadTile0: 32
     ThreadTile1: 8
     ThreadTileA: 32
@@ -244714,17 +244710,17 @@
     WaveSeparateGlobalReadMetadata: 0
     WaveSplitK: false
     WavefrontSize: 64
-    WorkGroup: [32, 8, 1]
+    WorkGroup: [16, 16, 1]
     WorkGroupMapping: 32
     WorkGroupMappingXCC: 1
     WorkGroupMappingXCCGroup: -1
     WorkGroupReduction: false
-    WorkspaceCheck: [4, 0, 1]
+    WorkspaceCheck: [4, 0, 0]
     _DepthU: 64
     _DepthUA: 64
     _DepthUB: 64
     _DepthUMetadata: 64
-    _GlobalAccumulation: MultipleBuffer
+    _GlobalAccumulation: PartialsBuffer
     _UseSgprForGRO: 1
     _VectorStore: 1
     _WorkspaceSizePerElemBias: 0
@@ -244738,7 +244734,7 @@
     tailLoopOptB: false
   - 1LDSBuffer: 0
     ActivationAlt: false
-    ActivationFuncCall: true
+    ActivationFuncCall: false
     ActivationFused: true
     AssertAIGreaterThanEqual: -1
     AssertAILessThanEqual: -1
@@ -244747,7 +244743,7 @@
     AssertSummationElementMultiple: 1
     AssignedDerivedParameters: true
     AssignedProblemIndependentDerivedParameters: true
-    BaseName: Custom_Cijk_Alik_Bljk_BBS_BH_Bias_HA_S_SAV_UserArgs_MT256x256x64_MI16x16x1_shortname1_gfx950
+    BaseName: Custom_Cijk_Alik_Bljk_BBS_BH_Bias_HA_S_SAV_UserArgs_MT256x256x64_MI16x16x1_shortname0_gfx950
     BufferLoad: true
     BufferStore: true
     CUCount: null
@@ -244755,7 +244751,7 @@
     ClusterLocalRead: 1
     CodeObjectVersion: '4'
     ConvertAfterDS: false
-    CustomKernelName: Custom_Cijk_Alik_Bljk_BBS_BH_Bias_HA_S_SAV_UserArgs_MT256x256x64_MI16x16x1_shortname1_gfx950
+    CustomKernelName: Custom_Cijk_Alik_Bljk_BBS_BH_Bias_HA_S_SAV_UserArgs_MT256x256x64_MI16x16x1_shortname0_gfx950
     DebugStreamK: 0
     DepthU: 64
     DirectToLds: true
@@ -244774,7 +244770,7 @@
     GlobalReadPerMfma: 1
     GlobalReadVectorWidthA: 8
     GlobalReadVectorWidthB: 8
-    GlobalSplitU: 1
+    GlobalSplitU: 0
     GlobalSplitUAlgorithm: MultipleBuffer
     GlobalSplitUCoalesced: false
     GlobalSplitUWorkGroupMappingRoundRobin: false
@@ -244787,10 +244783,10 @@
     InnerUnroll: 1
     InterleaveAlpha: 0
     InternalSupportParams: {KernArgsVersion: 2, SupportCustomStaggerU: true, SupportCustomWGM: true,
-      SupportUserGSU: true, UseUniversalArgs: true}
+      SupportUserGSU: false, UseUniversalArgs: true}
     Kernel: true
     KernelLanguage: Assembly
-    KernelNameMin: Custom_Cijk_Alik_Bljk_BBS_BH_Bias_HA_S_SAV_UserArgs_MT256x256x64_MI16x16x1_shortname1_gfx950
+    KernelNameMin: Custom_Cijk_Alik_Bljk_BBS_BH_Bias_HA_S_SAV_UserArgs_MT256x256x64_MI16x16x1_shortname0_gfx950
     LDSTrInst: false
     LSCA: 64
     LSCB: 64
@@ -244803,23 +244799,23 @@
     LdsBlockSizePerPadA: 1024
     LdsBlockSizePerPadB: 1024
     LdsBlockSizePerPadMetadata: 0
-    LdsBytesNoAmax: 133120
+    LdsBytesNoAmax: 135168
     LdsInitCVgprs: false
-    LdsNumBytes: 133120
-    LdsNumElementsAlignedA: 33280
-    LdsNumElementsAlignedB: 33280
+    LdsNumBytes: 135168
+    LdsNumElementsAlignedA: 33792
+    LdsNumElementsAlignedB: 33792
     LdsNumElementsAlignedMetadata: 0
     LdsOffsetA: 0
-    LdsOffsetA_Blk: 66560
-    LdsOffsetB: 33280
-    LdsOffsetB_Blk: 99840
+    LdsOffsetA_Blk: 67584
+    LdsOffsetB: 33792
+    LdsOffsetB_Blk: 101376
     LdsOffsetBias: 0
     LdsOffsetBiasGSU: 0
     LdsOffsetBiasNonGSU: 0
-    LdsOffsetMetadata: 33280
-    LdsOffsetMetadata_Blk: 99840
-    LdsPadA: 8
-    LdsPadB: 8
+    LdsOffsetMetadata: 33792
+    LdsOffsetMetadata_Blk: 101376
+    LdsPadA: 16
+    LdsPadB: 16
     LdsPadMetadata: 0
     LocalReadVectorWidth: 8
     LocalSplitU: 1
@@ -244829,13 +244825,11 @@
     LocalWriteUseSgprB: true
     LoopIters: 2
     LoopUnroll: 64
-    MFMA_BF16_1K: false
     MIArchVgpr: false
     MIBlock: [16, 16, 32, 1, 1, 1]
     MIInputPerThread: 8
     MIInputPerThreadA: 8
     MIInputPerThreadB: 8
-    MIInputPerThreadMetadata: 8
     MIOutputVectorWidth: 4
     MIRegPerOut: 1
     MIWaveGroup: [2, 2]
@@ -244868,7 +244862,7 @@
     NonTemporalA: 0
     NonTemporalB: 0
     NonTemporalC: 0
-    NonTemporalD: 4
+    NonTemporalD: 0
     NonTemporalE: 0
     NonTemporalMetadata: 0
     NonTemporalWS: 0
@@ -244972,17 +244966,17 @@
     ScheduleIterAlg: 3
     ScheduleLocalWrite: 1
     SolutionIndex: 815
-    SolutionNameMin: Custom_Cijk_Alik_Bljk_BBS_BH_Bias_HA_S_SAV_UserArgs_MT256x256x64_MI16x16x1_shortname1_gfx950
-    SourceSwap: 1
+    SolutionNameMin: Custom_Cijk_Alik_Bljk_BBS_BH_Bias_HA_S_SAV_UserArgs_MT256x256x64_MI16x16x1_shortname0_gfx950
+    SourceSwap: false
     StaggerU: 0
     StaggerUMapping: 0
-    StaggerUStride: 0
+    StaggerUStride: 128
     StorePriorityOpt: false
     StoreRemapVectorWidth: 0
     StoreSwapAddr: true
     StoreSyncOpt: 0
-    StoreVectorWidth: 8
-    StreamK: 0
+    StoreVectorWidth: 4
+    StreamK: 3
     StreamKAtomic: 0
     StreamKXCCMapping: 0
     SubGroup0: 8
@@ -244990,7 +244984,7 @@
     SubGroupA: 8
     SubGroupB: 32
     SuppressNoLoadLoop: false
-    ThreadTile: [1, 1]
+    ThreadTile: [4, 4]
     ThreadTile0: 32
     ThreadTile1: 8
     ThreadTileA: 32
@@ -245016,17 +245010,17 @@
     WaveSeparateGlobalReadMetadata: 0
     WaveSplitK: false
     WavefrontSize: 64
-    WorkGroup: [32, 8, 1]
+    WorkGroup: [16, 16, 1]
     WorkGroupMapping: 16
     WorkGroupMappingXCC: 2
     WorkGroupMappingXCCGroup: -1
     WorkGroupReduction: false
-    WorkspaceCheck: [4, 0, 1]
+    WorkspaceCheck: [4, 0, 0]
     _DepthU: 64
     _DepthUA: 64
     _DepthUB: 64
     _DepthUMetadata: 64
-    _GlobalAccumulation: MultipleBuffer
+    _GlobalAccumulation: PartialsBuffer
     _UseSgprForGRO: 1
     _VectorStore: 1
     _WorkspaceSizePerElemBias: 0
