@@ -608,78 +608,8 @@ s_mov_b32 s[sgprArgType], s72
 s_mov_b32 m0, 0x20800                              // LDS clamp at 133120 bytes
 v_mov_b32 v[vgprSerial], v0                        // thread serial id
 
-/* remap workgroup to XCCs */
-s_lshr_b32 s80, s[sgprWGM], 0x10                   // Get WGMXCC
-s_ff1_i32_b32 s80, s80                             // Get log(WGMXCC)
-s_lshr_b32 s81, s[sgprWGM], 0x16                   // Get CU_Count
-/* remap WGs if WGMXCC > 1 ( log(WGMXCC) > 0 ) */
-s_cmp_gt_i32 s80, 0
-s_cbranch_scc0 label_skip_WGMXCC
-/* only remap WGs in the range */
-s_lshr_b32 s77, s74, s80
-s_lshl_b32 s77, s77, s80
-s_cmp_ge_u32 s[sgprWorkGroup0], s77
-s_cbranch_scc1 label_skip_WGMXCC
-s_cmp_eq_u32 s81, 0                                // CU_Count == 0 ?
-s_cbranch_scc0 label_XCCG_nonzero
-s_lshr_b32 s77, s[sgprWorkGroup0], s80
-s_bfm_b32 s78, s80, 0
-s_and_b32 s78, s[sgprWorkGroup0], s78
-s_lshr_b32 s79, s74, s80
-s_mul_i32 s78, s78, s79
-s_add_u32 s[sgprWorkGroup0], s77, s78
-s_branch label_skip_WGMXCC
-label_XCCG_nonzero:
-/* temp0 = (wg//CU_Count)*CU_Count */
-v_cvt_f32_u32 v4, s81                              // wg//CU_Count
-v_rcp_iflag_f32 v4, v4                             // wg//CU_Count
-v_cvt_f32_u32 v5, s[sgprWorkGroup0]                // wg//CU_Count
-v_mul_f32 v4, v4, v5                               // wg//CU_Count
-v_cvt_u32_f32 v4, v4                               // wg//CU_Count
-v_mul_u32_u24 v5, v4, s81                          // wg//CU_Count
-v_sub_u32 v5, s[sgprWorkGroup0], v5                // wg//CU_Count
-v_cmpx_eq_u32 exec, v5, s81                        // wg//CU_Count
-v_add_u32 v4, 1, v4                                // wg//CU_Count
-v_mov_b32 v5, 0                                    // wg//CU_Count
-s_mov_b64 exec, -1                                 // Reset exec
-v_cmpx_gt_u32 exec, v5, s81                        // overflow happened in remainder
-v_sub_u32 v4, v4, 1                                // quotient - 1
-v_mul_u32_u24 v5, v4, s81                          // re-calculate remainder
-v_sub_u32 v5, s[sgprWorkGroup0], v5                // re-calculate remainder
-s_mov_b64 exec, -1                                 // Reset exec
-v_readfirstlane_b32 s77, v4                        // quotient
-v_readfirstlane_b32 s78, v5                        // remainder
-s_mul_i32 s77, s77, s81
-/* temp1 = (wg%CU_Count)//WGMXCC */
-s_lshr_b32 s78, s78, s80
-/* temp0 = temp0 + temp1 */
-s_add_u32 s77, s77, s78
-/* temp1 = (wg%WGMXCC) * ((WGs - (WGs//CU_Count) * CU_Count) if (wg > (WGs//CU_Count) * CU_Count) else CU_Count)//WGMXCC */
-v_cvt_f32_u32 v4, s81                              // WGs//CU_Count
-v_rcp_iflag_f32 v4, v4                             // WGs//CU_Count
-v_cvt_f32_u32 v5, s74                              // WGs//CU_Count
-v_mul_f32 v4, v4, v5                               // WGs//CU_Count
-v_cvt_u32_f32 v4, v4                               // WGs//CU_Count
-v_mul_u32_u24 v5, v4, s81                          // WGs//CU_Count
-v_sub_u32 v5, s74, v5                              // WGs//CU_Count
-v_cmpx_eq_u32 exec, v5, s81                        // WGs//CU_Count
-v_add_u32 v4, 1, v4                                // WGs//CU_Count
-s_mov_b64 exec, -1                                 // Reset exec
-v_cmpx_gt_u32 exec, v5, s81                        // overflow happened in remainder
-v_sub_u32 v4, v4, 1                                // quotient - 1
-s_mov_b64 exec, -1                                 // Reset exec
-v_readfirstlane_b32 s78, v4                        // quotient
-s_mul_i32 s78, s78, s81
-s_sub_u32 s79, s74, s78
-s_cmp_gt_u32 s[sgprWorkGroup0], s78
-s_cselect_b32 s78, s79, s81
-s_lshr_b32 s78, s78, s80
-s_bfm_b32 s79, s80, 0
-s_and_b32 s79, s[sgprWorkGroup0], s79
-s_mul_i32 s78, s78, s79
-/* WorkGroup0 = temp0 + temp1 */
-s_add_u32 s[sgprWorkGroup0], s77, s78
-label_skip_WGMXCC:  /// skip WGMXCC if no enough WGs to remap
+s_mov_b32 s[sgprWGM], s[sgprWorkGroup0+0]
+  
 s_cmp_eq_u32 s72, 0
 s_cbranch_scc0 label_MultiGemm
 /* init: add vgpr [4...136) to pool */
@@ -1017,8 +947,37 @@ label_WGM:
 .set sgpr79, 98
 .set sgpr88, 88
 
+s_mov_b32 s[sgpr88], s[sgpr104]
+
+
+v_mov_b32 v12, MT0                                 // set MT0 into sgpr
+v_mov_b32 v11, s[sgprSizesFree+0]                  // set Free0 size
+v_cvt_f32_u32 v10, v12                             // v10 = ceil(v11 / v12)
+v_rcp_iflag_f32 v10, v10                           // v10 = ceil(v11 / v12)
+v_cvt_f32_u32 v13, v11                             // v10 = ceil(v11 / v12)
+v_mul_f32 v10, v10, v13                            // v10 = ceil(v11 / v12)
+v_cvt_u32_f32 v10, v10                             // v10 = ceil(v11 / v12)
+v_mul_u32_u24 v13, v10, v12                        // v10 = ceil(v11 / v12)
+v_sub_u32 v13, v11, v13                            // v10 = ceil(v11 / v12)
+v_cmp_ne_u32 vcc, v13, 0                           // v10 = ceil(v11 / v12)
+v_addc_co_u32 v10, vcc, v10, 0, vcc                // ceil
+v_mov_b32 v12, MT1                                 // set MT1 into sgpr
+v_mov_b32 v11, s[sgprSizesFree+1]                  // set Free1 size
+v_readfirstlane_b32 s[sgpr78], v10     // set back to numWorkGroup0
+v_cvt_f32_u32 v10, v12                             // v10 = ceil(v11 / v12)
+v_rcp_iflag_f32 v10, v10                           // v10 = ceil(v11 / v12)
+v_cvt_f32_u32 v13, v11                             // v10 = ceil(v11 / v12)
+v_mul_f32 v10, v10, v13                            // v10 = ceil(v11 / v12)
+v_cvt_u32_f32 v10, v10                             // v10 = ceil(v11 / v12)
+v_mul_u32_u24 v13, v10, v12                        // v10 = ceil(v11 / v12)
+v_sub_u32 v13, v11, v13                            // v10 = ceil(v11 / v12)
+v_cmp_ne_u32 vcc, v13, 0                           // v10 = ceil(v11 / v12)
+v_addc_co_u32 v10, vcc, v10, 0, vcc                // ceil
+s_nop 0                                            // 1 wait states
+v_readfirstlane_b32 s[sgpr79], v10     // set back to numWorkGroup1
+  
 // Remap workgroup id based on xcc  
-s_mul_i32 s[sgpr70], s[sgprNumWorkGroups0], s[sgprNumWorkGroups1] // num wg
+s_mul_i32 s[sgpr70], s[sgpr78], s[sgpr79] // num wg
 s_add_u32 s[sgpr71], s[sgpr70], 255
 s_lshr_b32 s[sgpr71], s[sgpr71], 8 // nr number of rounds  
 s_lshr_b32 s[sgpr77], s[sgpr88], 8 // cr current rounds
@@ -1052,9 +1011,40 @@ s_add_u32 s[sgpr88], s[sgpr88], s[sgpr77] // final offset + cr * nwg
   // s[sgpr88] - contains serial idx
   //
 // Space filling curve algo..
+
+
+v_mov_b32 v12, MT0                                 // set MT0 into sgpr
+v_mov_b32 v11, s[sgprSizesFree+0]                  // set Free0 size
+v_cvt_f32_u32 v10, v12                             // v10 = ceil(v11 / v12)
+v_rcp_iflag_f32 v10, v10                           // v10 = ceil(v11 / v12)
+v_cvt_f32_u32 v13, v11                             // v10 = ceil(v11 / v12)
+v_mul_f32 v10, v10, v13                            // v10 = ceil(v11 / v12)
+v_cvt_u32_f32 v10, v10                             // v10 = ceil(v11 / v12)
+v_mul_u32_u24 v13, v10, v12                        // v10 = ceil(v11 / v12)
+v_sub_u32 v13, v11, v13                            // v10 = ceil(v11 / v12)
+v_cmp_ne_u32 vcc, v13, 0                           // v10 = ceil(v11 / v12)
+v_addc_co_u32 v10, vcc, v10, 0, vcc                // ceil
+v_mov_b32 v12, MT1                                 // set MT1 into sgpr
+v_mov_b32 v11, s[sgprSizesFree+1]                  // set Free1 size
+v_readfirstlane_b32 s[sgpr71], v10     // set back to numWorkGroup0
+v_cvt_f32_u32 v10, v12                             // v10 = ceil(v11 / v12)
+v_rcp_iflag_f32 v10, v10                           // v10 = ceil(v11 / v12)
+v_cvt_f32_u32 v13, v11                             // v10 = ceil(v11 / v12)
+v_mul_f32 v10, v10, v13                            // v10 = ceil(v11 / v12)
+v_cvt_u32_f32 v10, v10                             // v10 = ceil(v11 / v12)
+v_mul_u32_u24 v13, v10, v12                        // v10 = ceil(v11 / v12)
+v_sub_u32 v13, v11, v13                            // v10 = ceil(v11 / v12)
+v_cmp_ne_u32 vcc, v13, 0                           // v10 = ceil(v11 / v12)
+v_addc_co_u32 v10, vcc, v10, 0, vcc                // ceil
+s_nop 0                                            // 1 wait states
+v_readfirstlane_b32 s[sgpr72], v10     // set back to numWorkGroup1
+  
+
 s_mov_b32 s[sgpr70], s[sgpr88] // orig serial id
-s_mov_b32 s[sgpr71], s[sgprNumWorkGroups0] // M
-s_mov_b32 s[sgpr72], s[sgprNumWorkGroups1] // N
+//s_mov_b32 s[sgpr71], s[sgpr78] // M
+//s_mov_b32 s[sgpr72], s[sgpr79] // N  
+//s_mov_b32 s[sgpr71], s[sgprNumWorkGroups0] // M
+//s_mov_b32 s[sgpr72], s[sgprNumWorkGroups1] // N
 s_mov_b32 s84, 0 // x
 s_mov_b32 s85, 0 // y
 .set dirN_CC, 0
