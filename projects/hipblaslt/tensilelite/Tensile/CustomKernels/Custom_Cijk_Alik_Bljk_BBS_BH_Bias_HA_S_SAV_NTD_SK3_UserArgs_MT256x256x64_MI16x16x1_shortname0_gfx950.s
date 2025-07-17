@@ -608,8 +608,6 @@ s_mov_b32 s[sgprArgType], s72
 s_mov_b32 m0, 0x20800                              // LDS clamp at 133120 bytes
 v_mov_b32 v[vgprSerial], v0                        // thread serial id
 
-s_mov_b32 s[sgprWGM], s[sgprWorkGroup0+0]
-  
 s_cmp_eq_u32 s72, 0
 s_cbranch_scc0 label_MultiGemm
 /* init: add vgpr [4...136) to pool */
@@ -949,7 +947,6 @@ label_WGM:
 
 s_mov_b32 s[sgpr88], s[sgpr104]
 
-
 v_mov_b32 v12, MT0                                 // set MT0 into sgpr
 v_mov_b32 v11, s[sgprSizesFree+0]                  // set Free0 size
 v_cvt_f32_u32 v10, v12                             // v10 = ceil(v11 / v12)
@@ -986,8 +983,8 @@ s_min_u32 s[sgpr74], s[sgpr70], 256 // min(numwg, 256)
 s_lshl_b32 s[sgpr75], s[sgpr77], 8 // cr * 256  
 s_sub_u32 s[sgpr75], s[sgpr70], s[sgpr75] // numwg - cr * 256
 
-s_sub_u32 s[sgpr79], s[sgpr71], 1  
-s_cmp_lt_u32 s[sgpr77], s[sgpr79]
+s_sub_u32 s[sgpr76], s[sgpr71], 1  
+s_cmp_lt_u32 s[sgpr77], s[sgpr76]
 s_cselect_b32 s[sgpr70], s[sgpr74], s[sgpr75] // nwg = cr < nr - 1 ? std::min<int>(256, nwg) : nwg - (cr) * 256;  
 
 s_and_b32 s[sgpr88], s[sgpr88], 255  
@@ -1013,36 +1010,9 @@ s_add_u32 s[sgpr88], s[sgpr88], s[sgpr77] // final offset + cr * nwg
 // Space filling curve algo..
 
 
-v_mov_b32 v12, MT0                                 // set MT0 into sgpr
-v_mov_b32 v11, s[sgprSizesFree+0]                  // set Free0 size
-v_cvt_f32_u32 v10, v12                             // v10 = ceil(v11 / v12)
-v_rcp_iflag_f32 v10, v10                           // v10 = ceil(v11 / v12)
-v_cvt_f32_u32 v13, v11                             // v10 = ceil(v11 / v12)
-v_mul_f32 v10, v10, v13                            // v10 = ceil(v11 / v12)
-v_cvt_u32_f32 v10, v10                             // v10 = ceil(v11 / v12)
-v_mul_u32_u24 v13, v10, v12                        // v10 = ceil(v11 / v12)
-v_sub_u32 v13, v11, v13                            // v10 = ceil(v11 / v12)
-v_cmp_ne_u32 vcc, v13, 0                           // v10 = ceil(v11 / v12)
-v_addc_co_u32 v10, vcc, v10, 0, vcc                // ceil
-v_mov_b32 v12, MT1                                 // set MT1 into sgpr
-v_mov_b32 v11, s[sgprSizesFree+1]                  // set Free1 size
-v_readfirstlane_b32 s[sgpr71], v10     // set back to numWorkGroup0
-v_cvt_f32_u32 v10, v12                             // v10 = ceil(v11 / v12)
-v_rcp_iflag_f32 v10, v10                           // v10 = ceil(v11 / v12)
-v_cvt_f32_u32 v13, v11                             // v10 = ceil(v11 / v12)
-v_mul_f32 v10, v10, v13                            // v10 = ceil(v11 / v12)
-v_cvt_u32_f32 v10, v10                             // v10 = ceil(v11 / v12)
-v_mul_u32_u24 v13, v10, v12                        // v10 = ceil(v11 / v12)
-v_sub_u32 v13, v11, v13                            // v10 = ceil(v11 / v12)
-v_cmp_ne_u32 vcc, v13, 0                           // v10 = ceil(v11 / v12)
-v_addc_co_u32 v10, vcc, v10, 0, vcc                // ceil
-s_nop 0                                            // 1 wait states
-v_readfirstlane_b32 s[sgpr72], v10     // set back to numWorkGroup1
-  
-
 s_mov_b32 s[sgpr70], s[sgpr88] // orig serial id
-//s_mov_b32 s[sgpr71], s[sgpr78] // M
-//s_mov_b32 s[sgpr72], s[sgpr79] // N  
+s_mov_b32 s[sgpr71], s[sgpr78] // M
+s_mov_b32 s[sgpr72], s[sgpr79] // N  
 //s_mov_b32 s[sgpr71], s[sgprNumWorkGroups0] // M
 //s_mov_b32 s[sgpr72], s[sgprNumWorkGroups1] // N
 s_mov_b32 s84, 0 // x

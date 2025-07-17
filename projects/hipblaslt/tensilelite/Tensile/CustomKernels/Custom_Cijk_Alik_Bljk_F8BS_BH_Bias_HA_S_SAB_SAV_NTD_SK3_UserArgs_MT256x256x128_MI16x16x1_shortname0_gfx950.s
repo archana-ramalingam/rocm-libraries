@@ -1013,137 +1013,541 @@ s_setpc_b64 s[sgpr108:sgpr109]                             // branch to label_GW
 label_NoBranch_UR8VN3A1SJCPC6PO:
 s_mov_b32 s[sgprStreamKLocalEnd], s[sgprItersPerTile] // Skip iterations
 label_SKAlphaCheck:
-s_sext_i32_i16 s[sgprWGM], s[sgprWGM]              // Restore WGM
-s_cmp_gt_i32 s[sgprWGM], 1                         // WGM > 1 ?
-s_cbranch_scc1 label_WGMPositive                   // branch if WGM > 1
-s_cmp_ge_i32 s[sgprWGM], 0                         // WGM >= 0 ?
-s_cbranch_scc1 label_WGM                           // branch if WGM >= 0
-s_abs_i32 s[sgpr108], s[sgprWGM]                         // abs(WGM)
-v_cvt_f32_u32 v4, s[sgpr108]                             // WGM
-v_rcp_iflag_f32 v4, v4                             // WGM
-v_cvt_f32_u32 v5, s[sgprWorkGroup0]                // WGM
-v_mul_f32 v4, v4, v5                               // WGM
-v_cvt_u32_f32 v4, v4                               // WGM
-v_mul_u32_u24 v5, v4, s[sgpr108]                         // WGM
-v_sub_u32 v5, s[sgprWorkGroup0], v5                // WGM
-v_cmpx_eq_u32 exec, v5, s[sgpr108]                       // WGM
-v_add_u32 v4, 1, v4                                // WGM
-s_mov_b64 exec, -1                                 // Reset exec
-v_cmpx_gt_u32 exec, v5, s[sgpr108]                       // overflow happened in remainder
-v_sub_u32 v4, v4, 1                                // quotient - 1
-s_mov_b64 exec, -1                                 // Reset exec
-v_readfirstlane_b32 s[sgpr106], v4                       // quotient
-s_mul_i32 s[sgpr107], s[sgpr106], s[sgpr108]                         // quotient * non-magic divisor
-s_sub_u32 s[sgpr107], s[sgprWorkGroup0], s[sgpr107]            // WorkGroup0=remainder
-s_mul_i32 s[sgpr107], s[sgpr107], s[sgprNumWorkGroups1]        // (wg1 % WGM)*NumWorkGroups1
-s_add_u32 s[sgpr107], s[sgpr107], s[sgprWorkGroup1]            // wgSerial = wg0 + (wg1 % WGM)*NumWorkGroups1
-v_cvt_f32_u32 v4, s[sgpr108]                             // WGM
-v_rcp_iflag_f32 v4, v4                             // WGM
-v_cvt_f32_u32 v5, s[sgprNumWorkGroups0]            // WGM
-v_mul_f32 v4, v4, v5                               // WGM
-v_cvt_u32_f32 v4, v4                               // WGM
-v_mul_u32_u24 v5, v4, s[sgpr108]                         // WGM
-v_sub_u32 v5, s[sgprNumWorkGroups0], v5            // WGM
-v_cmpx_eq_u32 exec, v5, s[sgpr108]                       // WGM
-v_add_u32 v4, 1, v4                                // WGM
-s_mov_b64 exec, -1                                 // Reset exec
-v_cmpx_gt_u32 exec, v5, s[sgpr108]                       // overflow happened in remainder
-v_sub_u32 v4, v4, 1                                // quotient - 1
-s_mov_b64 exec, -1                                 // Reset exec
-v_readfirstlane_b32 s[sgpr104], v4                       // quotient
-s_mul_i32 s[sgpr105], s[sgpr108], s[sgpr104]                         // quotient * non-magic divisor
-s_sub_u32 s[sgpr105], s[sgprNumWorkGroups0], s[sgpr105]        // NumWorkGroups0=remainder
-s_cmp_eq_u32 s[sgpr105], 0                               // remainder == 0 ?
-s_cmov_b32 s[sgpr105], s[sgpr108]                              // remainder = WGM if remainder == 0
-s_cmp_ge_u32 s[sgpr106], s[sgpr104]                            // blockId >= numFullBlocks ?
-s_cselect_b32 s[sgpr104], s[sgpr105], s[sgpr108]
-v_cvt_f32_u32 v4, s[sgpr104]                             // s[sgprWorkGroup1] = s[sgpr107] / s[sgpr104]
-v_rcp_iflag_f32 v4, v4                             // s[sgprWorkGroup1] = s[sgpr107] / s[sgpr104]
-v_cvt_f32_u32 v5, s[sgpr107]                             // s[sgprWorkGroup1] = s[sgpr107] / s[sgpr104]
-v_mul_f32 v4, v4, v5                               // s[sgprWorkGroup1] = s[sgpr107] / s[sgpr104]
-v_cvt_u32_f32 v4, v4                               // s[sgprWorkGroup1] = s[sgpr107] / s[sgpr104]
-v_mul_u32_u24 v5, v4, s[sgpr104]                         // s[sgprWorkGroup1] = s[sgpr107] / s[sgpr104]
-v_sub_u32 v5, s[sgpr107], v5                             // s[sgprWorkGroup1] = s[sgpr107] / s[sgpr104]
-v_cmpx_eq_u32 exec, v5, s[sgpr104]                       // s[sgprWorkGroup1] = s[sgpr107] / s[sgpr104]
-v_add_u32 v4, 1, v4                                // s[sgprWorkGroup1] = s[sgpr107] / s[sgpr104]
-v_mov_b32 v5, 0                                    // s[sgprWorkGroup0] = s[sgpr107] % s[sgpr104]
-s_mov_b64 exec, -1                                 // Reset exec
-v_cmpx_gt_u32 exec, v5, s[sgpr104]                       // overflow happened in remainder
-v_sub_u32 v4, v4, 1                                // quotient - 1
-v_mul_u32_u24 v5, v4, s[sgpr104]                         // re-calculate remainder
-v_sub_u32 v5, s[sgpr107], v5                             // re-calculate remainder
-s_mov_b64 exec, -1                                 // Reset exec
-v_readfirstlane_b32 s[sgprWorkGroup1], v4          // quotient
-v_readfirstlane_b32 s[sgprWorkGroup0], v5          // remainder
-s_mul_i32 s[sgprWorkGroup0], s[sgprWorkGroup1], s[sgpr104] // quotient * non-magic divisor
-s_sub_u32 s[sgprWorkGroup0], s[sgpr107], s[sgprWorkGroup0] // WorkGroup0=remainder
-s_mul_i32 s[sgpr106], s[sgpr106], s[sgpr108]                         // blockId * WGM
-s_add_u32 s[sgprWorkGroup0], s[sgprWorkGroup0], s[sgpr106] // wg1 += blockId * WGM
-s_branch label_WGM
-label_WGMPositive:
-s_mov_b32 s[sgpr108], s[sgprWGM]                         // WGM
-v_cvt_f32_u32 v4, s[sgpr108]                             // WGM
-v_rcp_iflag_f32 v4, v4                             // WGM
-v_cvt_f32_u32 v5, s[sgprWorkGroup1]                // WGM
-v_mul_f32 v4, v4, v5                               // WGM
-v_cvt_u32_f32 v4, v4                               // WGM
-v_mul_u32_u24 v5, v4, s[sgpr108]                         // WGM
-v_sub_u32 v5, s[sgprWorkGroup1], v5                // WGM
-v_cmpx_eq_u32 exec, v5, s[sgpr108]                       // WGM
-v_add_u32 v4, 1, v4                                // WGM
-s_mov_b64 exec, -1                                 // Reset exec
-v_cmpx_gt_u32 exec, v5, s[sgpr108]                       // overflow happened in remainder
-v_sub_u32 v4, v4, 1                                // quotient - 1
-s_mov_b64 exec, -1                                 // Reset exec
-v_readfirstlane_b32 s[sgpr106], v4                       // quotient
-s_mul_i32 s[sgpr107], s[sgpr106], s[sgpr108]                         // quotient * non-magic divisor
-s_sub_u32 s[sgpr107], s[sgprWorkGroup1], s[sgpr107]            // WorkGroup1=remainder
-s_mul_i32 s[sgpr107], s[sgpr107], s[sgprNumWorkGroups0]        // (wg1 % WGM)*NumWorkGroups0
-s_add_u32 s[sgpr107], s[sgpr107], s[sgprWorkGroup0]            // wgSerial = wg0 + (wg1 % WGM)*NumWorkGroups0
-v_cvt_f32_u32 v4, s[sgpr108]                             // WGM
-v_rcp_iflag_f32 v4, v4                             // WGM
-v_cvt_f32_u32 v5, s[sgprNumWorkGroups1]            // WGM
-v_mul_f32 v4, v4, v5                               // WGM
-v_cvt_u32_f32 v4, v4                               // WGM
-v_mul_u32_u24 v5, v4, s[sgpr108]                         // WGM
-v_sub_u32 v5, s[sgprNumWorkGroups1], v5            // WGM
-v_cmpx_eq_u32 exec, v5, s[sgpr108]                       // WGM
-v_add_u32 v4, 1, v4                                // WGM
-s_mov_b64 exec, -1                                 // Reset exec
-v_cmpx_gt_u32 exec, v5, s[sgpr108]                       // overflow happened in remainder
-v_sub_u32 v4, v4, 1                                // quotient - 1
-s_mov_b64 exec, -1                                 // Reset exec
-v_readfirstlane_b32 s[sgpr104], v4                       // quotient
-s_mul_i32 s[sgpr105], s[sgpr108], s[sgpr104]                         // quotient * non-magic divisor
-s_sub_u32 s[sgpr105], s[sgprNumWorkGroups1], s[sgpr105]        // NumWorkGroups1=remainder
-s_cmp_eq_u32 s[sgpr105], 0                               // remainder == 0 ?
-s_cmov_b32 s[sgpr105], s[sgpr108]                              // remainder = WGM if remainder == 0
-s_cmp_ge_u32 s[sgpr106], s[sgpr104]                            // blockId >= numFullBlocks ?
-s_cselect_b32 s[sgpr104], s[sgpr105], s[sgpr108]
-v_cvt_f32_u32 v4, s[sgpr104]                             // s[sgprWorkGroup0] = s[sgpr107] / s[sgpr104]
-v_rcp_iflag_f32 v4, v4                             // s[sgprWorkGroup0] = s[sgpr107] / s[sgpr104]
-v_cvt_f32_u32 v5, s[sgpr107]                             // s[sgprWorkGroup0] = s[sgpr107] / s[sgpr104]
-v_mul_f32 v4, v4, v5                               // s[sgprWorkGroup0] = s[sgpr107] / s[sgpr104]
-v_cvt_u32_f32 v4, v4                               // s[sgprWorkGroup0] = s[sgpr107] / s[sgpr104]
-v_mul_u32_u24 v5, v4, s[sgpr104]                         // s[sgprWorkGroup0] = s[sgpr107] / s[sgpr104]
-v_sub_u32 v5, s[sgpr107], v5                             // s[sgprWorkGroup0] = s[sgpr107] / s[sgpr104]
-v_cmpx_eq_u32 exec, v5, s[sgpr104]                       // s[sgprWorkGroup0] = s[sgpr107] / s[sgpr104]
-v_add_u32 v4, 1, v4                                // s[sgprWorkGroup0] = s[sgpr107] / s[sgpr104]
-v_mov_b32 v5, 0                                    // s[sgprWorkGroup1] = s[sgpr107] % s[sgpr104]
-s_mov_b64 exec, -1                                 // Reset exec
-v_cmpx_gt_u32 exec, v5, s[sgpr104]                       // overflow happened in remainder
-v_sub_u32 v4, v4, 1                                // quotient - 1
-v_mul_u32_u24 v5, v4, s[sgpr104]                         // re-calculate remainder
-v_sub_u32 v5, s[sgpr107], v5                             // re-calculate remainder
-s_mov_b64 exec, -1                                 // Reset exec
-v_readfirstlane_b32 s[sgprWorkGroup0], v4          // quotient
-v_readfirstlane_b32 s[sgprWorkGroup1], v5          // remainder
-s_mul_i32 s[sgprWorkGroup1], s[sgprWorkGroup0], s[sgpr104] // quotient * non-magic divisor
-s_sub_u32 s[sgprWorkGroup1], s[sgpr107], s[sgprWorkGroup1] // WorkGroup1=remainder
-s_mul_i32 s[sgpr106], s[sgpr106], s[sgpr108]                         // blockId * WGM
-s_add_u32 s[sgprWorkGroup1], s[sgprWorkGroup1], s[sgpr106] // wg1 += blockId * WGM
 label_WGM:
 
+
+.set sgpr70, 89
+.set sgpr71, 90  
+.set sgpr72, 91
+.set sgpr73, 92
+.set sgpr74, 93
+.set sgpr75, 94
+.set sgpr76, 95
+.set sgpr77, 96
+.set sgpr78, 97
+.set sgpr79, 98
+.set sgpr88, 88
+
+s_mov_b32 s[sgpr88], s[sgpr104]
+
+v_mov_b32 v12, MT0                                 // set MT0 into sgpr
+v_mov_b32 v11, s[sgprSizesFree+0]                  // set Free0 size
+v_cvt_f32_u32 v10, v12                             // v10 = ceil(v11 / v12)
+v_rcp_iflag_f32 v10, v10                           // v10 = ceil(v11 / v12)
+v_cvt_f32_u32 v13, v11                             // v10 = ceil(v11 / v12)
+v_mul_f32 v10, v10, v13                            // v10 = ceil(v11 / v12)
+v_cvt_u32_f32 v10, v10                             // v10 = ceil(v11 / v12)
+v_mul_u32_u24 v13, v10, v12                        // v10 = ceil(v11 / v12)
+v_sub_u32 v13, v11, v13                            // v10 = ceil(v11 / v12)
+v_cmp_ne_u32 vcc, v13, 0                           // v10 = ceil(v11 / v12)
+v_addc_co_u32 v10, vcc, v10, 0, vcc                // ceil
+v_mov_b32 v12, MT1                                 // set MT1 into sgpr
+v_mov_b32 v11, s[sgprSizesFree+1]                  // set Free1 size
+v_readfirstlane_b32 s[sgpr78], v10     // set back to numWorkGroup0
+v_cvt_f32_u32 v10, v12                             // v10 = ceil(v11 / v12)
+v_rcp_iflag_f32 v10, v10                           // v10 = ceil(v11 / v12)
+v_cvt_f32_u32 v13, v11                             // v10 = ceil(v11 / v12)
+v_mul_f32 v10, v10, v13                            // v10 = ceil(v11 / v12)
+v_cvt_u32_f32 v10, v10                             // v10 = ceil(v11 / v12)
+v_mul_u32_u24 v13, v10, v12                        // v10 = ceil(v11 / v12)
+v_sub_u32 v13, v11, v13                            // v10 = ceil(v11 / v12)
+v_cmp_ne_u32 vcc, v13, 0                           // v10 = ceil(v11 / v12)
+v_addc_co_u32 v10, vcc, v10, 0, vcc                // ceil
+s_nop 0                                            // 1 wait states
+v_readfirstlane_b32 s[sgpr79], v10     // set back to numWorkGroup1
+  
+// Remap workgroup id based on xcc  
+s_mul_i32 s[sgpr70], s[sgpr78], s[sgpr79] // num wg
+s_add_u32 s[sgpr71], s[sgpr70], 255
+s_lshr_b32 s[sgpr71], s[sgpr71], 8 // nr number of rounds  
+s_lshr_b32 s[sgpr77], s[sgpr88], 8 // cr current rounds
+
+s_min_u32 s[sgpr74], s[sgpr70], 256 // min(numwg, 256)
+s_lshl_b32 s[sgpr75], s[sgpr77], 8 // cr * 256  
+s_sub_u32 s[sgpr75], s[sgpr70], s[sgpr75] // numwg - cr * 256
+
+s_sub_u32 s[sgpr76], s[sgpr71], 1  
+s_cmp_lt_u32 s[sgpr77], s[sgpr76]
+s_cselect_b32 s[sgpr70], s[sgpr74], s[sgpr75] // nwg = cr < nr - 1 ? std::min<int>(256, nwg) : nwg - (cr) * 256;  
+
+s_and_b32 s[sgpr88], s[sgpr88], 255  
+s_lshr_b32 s84, s[sgpr70], 3 // num wg per xcc
+s_and_b32 s85, s[sgpr70], 7 // num xcc with extra wg
+s_and_b32 s86, s[sgpr88], 7 // logical xcc id
+
+s_min_u32 s87, s85, s86 // min(xccid, cutoff)  
+s_sub_u32 s[sgpr71], s86, s87 // xccid - min(cutoff)
+
+s_mul_i32 s[sgpr73], s[sgpr71], s84
+s_add_u32 s84, s84, 1
+s_mul_i32 s[sgpr72], s87, s84
+s_add_u32 s[sgpr72], s[sgpr72], s[sgpr73] // final offset
+
+s_lshr_b32 s84, s[sgpr88], 3  
+s_add_u32 s[sgpr88], s[sgpr72], s84 // final offset
+s_lshl_b32 s[sgpr77], s[sgpr77], 8 // cr * nwg
+s_add_u32 s[sgpr88], s[sgpr88], s[sgpr77] // final offset + cr * nwg
+  
+  // s[sgpr88] - contains serial idx
+  //
+// Space filling curve algo..
+
+
+s_mov_b32 s[sgpr70], s[sgpr88] // orig serial id
+s_mov_b32 s[sgpr71], s[sgpr78] // M
+s_mov_b32 s[sgpr72], s[sgpr79] // N  
+//s_mov_b32 s[sgpr71], s[sgprNumWorkGroups0] // M
+//s_mov_b32 s[sgpr72], s[sgprNumWorkGroups1] // N
+s_mov_b32 s84, 0 // x
+s_mov_b32 s85, 0 // y
+.set dirN_CC, 0
+.set dirN, 1
+.set dirS_CC, 2
+.set dirS, 3
+.set dirE_CC, 4
+.set dirE, 5
+.set dirW_CC, 6
+.set dirW, 7
+s_mov_b32 s86, dirN_CC // init direction
+/*  
+// while (M > 1 && N > 1)
+label_startWhile: 
+s_cmpk_gt_u32 s[sgpr71], 1
+s_cbranch_scc0 label_endWhile // exit if M == 1
+s_cmpk_gt_u32 s[sgpr72], 1
+s_cbranch_scc0 label_endWhile // exit if N == 1
+*/
+.set bszM, 8
+.set bszN, 4
+  
+label_startWhile: 
+s_mul_i32 s80, s[sgpr71], s[sgpr72]
+s_cmpk_gt_u32 s80, bszM * bszN 
+//s_cmpk_gt_u32 s[sgpr71], 8
+s_cbranch_scc0 label_endWhile // exit if M == 1
+//s_cmpk_gt_u32 s[sgpr72], 4
+//s_cbranch_scc0 label_endWhile // exit if N == 1
+//s_branch label_endWhile // exit if M == 1
+//label_whileImpl:
+
+
+  
+// Compute M1,M2,N1,N2  
+s_flbit_i32_b32 s80, s[sgpr71]
+s_flbit_i32_b32 s81, s[sgpr72]
+s_sub_u32 s80, 31, s80
+s_sub_u32 s81, 31, s81  
+s_lshl_b32 s80, 1, s80 // largest pow2 less than M
+s_lshl_b32 s81, 1, s81 // largest pow2 less than N
+
+/*
+s_min_u32 s82, s80, s81   // Lp
+// Check M = N = Lp  
+s_xor_b32 s80, s[sgpr71], s[sgpr72] // M=N
+s_xor_b32 s81, s[sgpr72], s82 // N=Lp
+s_lshr_b32 s[sgpr77], s82, 2
+s_cmp_eq_u32 s81, 0  
+s_cselect_b32 s[sgpr73], s[sgpr77], s82
+s_cselect_b32 s[sgpr74], s[sgpr77], s82*/
+
+  
+s_lshr_b32 s[sgpr73], s[sgpr71], 1 // M1 = M / 2
+s_lshr_b32 s[sgpr74], s[sgpr72], 1 // N1 = N / 2
+s_cmp_eq_u32 s80, s[sgpr71]
+s_cselect_b32 s[sgpr73], s[sgpr73], s80
+s_cmp_eq_u32 s81, s[sgpr72]
+s_cselect_b32 s[sgpr74], s[sgpr74], s81
+
+s_min_u32 s[sgpr75], s[sgpr71], bszM
+s_min_u32 s[sgpr76], s[sgpr72], bszN
+  
+// need to add max
+s_max_u32 s[sgpr73], s[sgpr73], s[sgpr75]
+s_max_u32 s[sgpr74], s[sgpr74], s[sgpr76]
+
+  
+s_sub_u32 s[sgpr75], s[sgpr71], s[sgpr73] // M2 = M - M1
+s_sub_u32 s[sgpr76], s[sgpr72], s[sgpr74] // N2 = N - N1
+
+.set sgprM1, sgpr73
+.set sgprN1, sgpr74
+.set sgprM2, sgpr75
+.set sgprN2, sgpr76
+
+s_cmp_eq_u32 s86, dirN_CC
+s_cbranch_scc1 label_directionN_CC
+s_cmp_eq_u32 s86, dirN
+s_cbranch_scc1 label_directionN
+s_cmp_eq_u32 s86, dirS_CC
+s_cbranch_scc1 label_directionS_CC
+s_cmp_eq_u32 s86, dirS
+s_cbranch_scc1 label_directionS
+s_cmp_eq_u32 s86, dirE_CC
+s_cbranch_scc1 label_directionE_CC
+s_cmp_eq_u32 s86, dirE
+s_cbranch_scc1 label_directionE
+s_cmp_eq_u32 s86, dirW_CC
+s_cbranch_scc1 label_directionW_CC
+s_cmp_eq_u32 s86, dirW
+s_cbranch_scc1 label_directionW
+  
+// s[sgpr73] = M1
+// s[sgpr74] = N1
+// s[sgpr75] = M2
+// s[sgpr76] = N2
+
+.macro BLOCK0
+s_mov_b32 s[sgpr71], s[sgprM1]
+s_mov_b32 s[sgpr72], s[sgprN1]
+.endm  
+
+.macro BLOCK1
+s_mov_b32 s[sgpr71], s[sgprM2]
+s_mov_b32 s[sgpr72], s[sgprN1]
+s_add_u32 s84, s84, s[sgprM1] // x += M1  
+.endm  
+
+.macro BLOCK2
+s_mov_b32 s[sgpr71], s[sgprM1]
+s_mov_b32 s[sgpr72], s[sgprN2]
+s_add_u32 s85, s85, s[sgprN1] // y += N1  
+.endm  
+
+.macro BLOCK3
+s_mov_b32 s[sgpr71], s[sgprM2]
+s_mov_b32 s[sgpr72], s[sgprN2]
+s_add_u32 s84, s84, s[sgprM1] // x += M1    
+s_add_u32 s85, s85, s[sgprN1] // y += N1  
+.endm  
+  
+  
+label_directionN_CC: // B: 0, 1, 3, 2
+s_mul_i32 s[sgpr77], s[sgprM1], s[sgprN1] // M1 * N1  
+s_mul_i32 s[sgpr78], s[sgprM2], s[sgprN1] // M2 * N1  
+s_add_u32 s[sgpr78], s[sgpr78], s[sgpr77] // M1 * N1 + M2 * N1  
+s_mul_i32 s[sgpr79], s[sgprM2], s[sgprN2] // M2 * N2  
+s_add_u32 s[sgpr79], s[sgpr79], s[sgpr78] // M1 * N1 + M2 * N1 + M2 * N2  
+// First Q  
+s_cmp_lt_u32 s[sgpr88], s[sgpr77]
+s_cbranch_scc0 label_secondQ_N_CC
+BLOCK0
+s_mov_b32 s86, dirW  
+s_branch label_startWhile  
+// Second Q
+label_secondQ_N_CC:  
+s_cmp_lt_u32 s[sgpr88], s[sgpr78]
+s_cbranch_scc0 label_thirdQ_N_CC  
+BLOCK1
+s_mov_b32 s86, dirN_CC    
+s_sub_u32 s[sgpr88], s[sgpr88], s[sgpr77] // id -= M1 * N1  
+s_branch label_startWhile  
+// Third Q  
+label_thirdQ_N_CC:  
+s_cmp_lt_u32 s[sgpr88], s[sgpr79]
+s_cbranch_scc0 label_fourthQ_N_CC  
+BLOCK3
+s_mov_b32 s86, dirN_CC      
+s_sub_u32 s[sgpr88], s[sgpr88], s[sgpr78] // id -= (M1 * N1 + M2 * N1)  
+s_branch label_startWhile  
+// Fourth Q  
+label_fourthQ_N_CC:
+BLOCK2
+s_mov_b32 s86, dirE  
+s_sub_u32 s[sgpr88], s[sgpr88], s[sgpr79] // id -= (M1 * N1 + M2 * N1 + M2 * N2)    
+s_branch label_startWhile  
+
+label_directionN: // B: 2, 3, 1, 0
+s_mul_i32 s[sgpr77], s[sgprM1], s[sgprN2]  
+s_mul_i32 s[sgpr78], s[sgprM2], s[sgprN2]  
+s_add_u32 s[sgpr78], s[sgpr78], s[sgpr77]  
+s_mul_i32 s[sgpr79], s[sgprM2], s[sgprN1]  
+s_add_u32 s[sgpr79], s[sgpr79], s[sgpr78]   
+// First Q  
+s_cmp_lt_u32 s[sgpr88], s[sgpr77]
+s_cbranch_scc0 label_secondQ_N
+BLOCK2
+s_mov_b32 s86, dirE_CC
+s_branch label_startWhile  
+// Second Q
+label_secondQ_N:  
+s_cmp_lt_u32 s[sgpr88], s[sgpr78]
+s_cbranch_scc0 label_thirdQ_N  
+BLOCK3
+s_mov_b32 s86, dirN
+s_sub_u32 s[sgpr88], s[sgpr88], s[sgpr77] // id -= M1 * N1  
+s_branch label_startWhile  
+// Third Q  
+label_thirdQ_N:  
+s_cmp_lt_u32 s[sgpr88], s[sgpr79]
+s_cbranch_scc0 label_fourthQ_N  
+BLOCK1
+s_mov_b32 s86, dirN
+s_sub_u32 s[sgpr88], s[sgpr88], s[sgpr78] // id -= (M1 * N1 + M2 * N1)  
+s_branch label_startWhile  
+// Fourth Q  
+label_fourthQ_N:
+BLOCK0
+s_mov_b32 s86, dirW_CC  
+s_sub_u32 s[sgpr88], s[sgpr88], s[sgpr79] // id -= (M1 * N1 + M2 * N1 + M2 * N2)    
+s_branch label_startWhile  
+  
+label_directionS_CC: // B: 3, 2, 0, 1
+s_mul_i32 s[sgpr77], s[sgprM2], s[sgprN2] 
+s_mul_i32 s[sgpr78], s[sgprM1], s[sgprN2] 
+s_add_u32 s[sgpr78], s[sgpr78], s[sgpr77] 
+s_mul_i32 s[sgpr79], s[sgprM1], s[sgprN1]
+s_add_u32 s[sgpr79], s[sgpr79], s[sgpr78]  
+// First Q  
+s_cmp_lt_u32 s[sgpr88], s[sgpr77]
+s_cbranch_scc0 label_secondQ_S_CC
+BLOCK3
+s_mov_b32 s86, dirE
+s_branch label_startWhile  
+// Second Q
+label_secondQ_S_CC:  
+s_cmp_lt_u32 s[sgpr88], s[sgpr78]
+s_cbranch_scc0 label_thirdQ_S_CC  
+BLOCK2
+s_mov_b32 s86, dirS_CC  
+s_sub_u32 s[sgpr88], s[sgpr88], s[sgpr77]
+s_branch label_startWhile  
+// Third Q  
+label_thirdQ_S_CC:  
+s_cmp_lt_u32 s[sgpr88], s[sgpr79]
+s_cbranch_scc0 label_fourthQ_S_CC  
+BLOCK0
+s_mov_b32 s86, dirS_CC
+s_sub_u32 s[sgpr88], s[sgpr88], s[sgpr78]  
+s_branch label_startWhile  
+// Fourth Q  
+label_fourthQ_S_CC:
+BLOCK1
+s_mov_b32 s86, dirW  
+s_sub_u32 s[sgpr88], s[sgpr88], s[sgpr79]    
+s_branch label_startWhile  
+
+label_directionS: // B: 1, 0, 2, 3
+s_mul_i32 s[sgpr77], s[sgprM2], s[sgprN1]  
+s_mul_i32 s[sgpr78], s[sgprM1], s[sgprN1]  
+s_add_u32 s[sgpr78], s[sgpr78], s[sgpr77]  
+s_mul_i32 s[sgpr79], s[sgprM1], s[sgprN2]  
+s_add_u32 s[sgpr79], s[sgpr79], s[sgpr78]   
+// First Q  
+s_cmp_lt_u32 s[sgpr88], s[sgpr77]
+s_cbranch_scc0 label_secondQ_S
+BLOCK1
+s_mov_b32 s86, dirW_CC  
+s_branch label_startWhile  
+// Second Q
+label_secondQ_S:  
+s_cmp_lt_u32 s[sgpr88], s[sgpr78]
+s_cbranch_scc0 label_thirdQ_S  
+BLOCK0
+s_mov_b32 s86, dirS  
+s_sub_u32 s[sgpr88], s[sgpr88], s[sgpr77] 
+s_branch label_startWhile  
+// Third Q  
+label_thirdQ_S:  
+s_cmp_lt_u32 s[sgpr88], s[sgpr79]
+s_cbranch_scc0 label_fourthQ_S  
+BLOCK2
+s_mov_b32 s86, dirS  
+s_sub_u32 s[sgpr88], s[sgpr88], s[sgpr78]  
+s_branch label_startWhile  
+// Fourth Q  
+label_fourthQ_S:
+BLOCK3
+s_mov_b32 s86, dirE_CC  
+s_sub_u32 s[sgpr88], s[sgpr88], s[sgpr79]    
+s_branch label_startWhile  
+
+
+label_directionE_CC: // B: 2, 0, 1, 3
+s_mul_i32 s[sgpr77], s[sgprM1], s[sgprN2] 
+s_mul_i32 s[sgpr78], s[sgprM1], s[sgprN1] 
+s_add_u32 s[sgpr78], s[sgpr78], s[sgpr77] 
+s_mul_i32 s[sgpr79], s[sgprM2], s[sgprN1]
+s_add_u32 s[sgpr79], s[sgpr79], s[sgpr78]  
+// First Q  
+s_cmp_lt_u32 s[sgpr88], s[sgpr77]
+s_cbranch_scc0 label_secondQ_E_CC
+BLOCK2
+s_mov_b32 s86, dirN  
+s_branch label_startWhile  
+// Second Q
+label_secondQ_E_CC:  
+s_cmp_lt_u32 s[sgpr88], s[sgpr78]
+s_cbranch_scc0 label_thirdQ_E_CC  
+BLOCK0
+s_mov_b32 s86, dirE_CC
+s_sub_u32 s[sgpr88], s[sgpr88], s[sgpr77]
+s_branch label_startWhile  
+// Third Q  
+label_thirdQ_E_CC:  
+s_cmp_lt_u32 s[sgpr88], s[sgpr79]
+s_cbranch_scc0 label_fourthQ_E_CC  
+BLOCK1
+s_mov_b32 s86, dirE_CC
+s_sub_u32 s[sgpr88], s[sgpr88], s[sgpr78]  
+s_branch label_startWhile  
+// Fourth Q  
+label_fourthQ_E_CC:
+BLOCK3
+s_mov_b32 s86, dirS  
+s_sub_u32 s[sgpr88], s[sgpr88], s[sgpr79]    
+s_branch label_startWhile  
+
+label_directionE: // B: 3, 1, 0, 2
+s_mul_i32 s[sgpr77], s[sgprM2], s[sgprN2]  
+s_mul_i32 s[sgpr78], s[sgprM2], s[sgprN1]  
+s_add_u32 s[sgpr78], s[sgpr78], s[sgpr77]  
+s_mul_i32 s[sgpr79], s[sgprM1], s[sgprN1]  
+s_add_u32 s[sgpr79], s[sgpr79], s[sgpr78]   
+// First Q  
+s_cmp_lt_u32 s[sgpr88], s[sgpr77]
+s_cbranch_scc0 label_secondQ_E
+BLOCK3
+s_mov_b32 s86, dirS_CC 
+s_branch label_startWhile  
+// Second Q
+label_secondQ_E:  
+s_cmp_lt_u32 s[sgpr88], s[sgpr78]
+s_cbranch_scc0 label_thirdQ_E  
+BLOCK1
+s_mov_b32 s86, dirE  
+s_sub_u32 s[sgpr88], s[sgpr88], s[sgpr77] 
+s_branch label_startWhile  
+// Third Q  
+label_thirdQ_E:  
+s_cmp_lt_u32 s[sgpr88], s[sgpr79]
+s_cbranch_scc0 label_fourthQ_E  
+BLOCK0
+s_mov_b32 s86, dirE  
+s_sub_u32 s[sgpr88], s[sgpr88], s[sgpr78]  
+s_branch label_startWhile  
+// Fourth Q  
+label_fourthQ_E:
+BLOCK2
+s_mov_b32 s86, dirN_CC  
+s_sub_u32 s[sgpr88], s[sgpr88], s[sgpr79]    
+s_branch label_startWhile  
+
+label_directionW_CC: // B: 1, 3, 2, 0
+s_mul_i32 s[sgpr77], s[sgprM2], s[sgprN1] 
+s_mul_i32 s[sgpr78], s[sgprM2], s[sgprN2] 
+s_add_u32 s[sgpr78], s[sgpr78], s[sgpr77] 
+s_mul_i32 s[sgpr79], s[sgprM1], s[sgprN2]
+s_add_u32 s[sgpr79], s[sgpr79], s[sgpr78]  
+// First Q  
+s_cmp_lt_u32 s[sgpr88], s[sgpr77]
+s_cbranch_scc0 label_secondQ_W_CC
+BLOCK1
+s_mov_b32 s86, dirS  
+s_branch label_startWhile  
+// Second Q
+label_secondQ_W_CC:  
+s_cmp_lt_u32 s[sgpr88], s[sgpr78]
+s_cbranch_scc0 label_thirdQ_W_CC  
+BLOCK3
+s_mov_b32 s86, dirW_CC
+s_sub_u32 s[sgpr88], s[sgpr88], s[sgpr77]
+s_branch label_startWhile  
+// Third Q  
+label_thirdQ_W_CC:  
+s_cmp_lt_u32 s[sgpr88], s[sgpr79]
+s_cbranch_scc0 label_fourthQ_W_CC  
+BLOCK2
+s_mov_b32 s86, dirW_CC  
+s_sub_u32 s[sgpr88], s[sgpr88], s[sgpr78]  
+s_branch label_startWhile  
+// Fourth Q  
+label_fourthQ_W_CC:
+BLOCK0
+s_mov_b32 s86, dirN  
+s_sub_u32 s[sgpr88], s[sgpr88], s[sgpr79]    
+s_branch label_startWhile  
+
+label_directionW: // B: 0, 2, 3, 1
+s_mul_i32 s[sgpr77], s[sgprM1], s[sgprN1]  
+s_mul_i32 s[sgpr78], s[sgprM1], s[sgprN2]  
+s_add_u32 s[sgpr78], s[sgpr78], s[sgpr77]  
+s_mul_i32 s[sgpr79], s[sgprM2], s[sgprN2]  
+s_add_u32 s[sgpr79], s[sgpr79], s[sgpr78]   
+// First Q  
+s_cmp_lt_u32 s[sgpr88], s[sgpr77]
+s_cbranch_scc0 label_secondQ_W
+BLOCK0
+s_mov_b32 s86, dirN_CC  
+s_branch label_startWhile  
+// Second Q
+label_secondQ_W:  
+s_cmp_lt_u32 s[sgpr88], s[sgpr78]
+s_cbranch_scc0 label_thirdQ_W  
+BLOCK2
+s_mov_b32 s86, dirW  
+s_sub_u32 s[sgpr88], s[sgpr88], s[sgpr77] 
+s_branch label_startWhile  
+// Third Q  
+label_thirdQ_W:  
+s_cmp_lt_u32 s[sgpr88], s[sgpr79]
+s_cbranch_scc0 label_fourthQ_W  
+BLOCK3
+s_mov_b32 s86, dirW  
+s_sub_u32 s[sgpr88], s[sgpr88], s[sgpr78]  
+s_branch label_startWhile  
+// Fourth Q  
+label_fourthQ_W:
+BLOCK1
+s_mov_b32 s86, dirS_CC  
+s_sub_u32 s[sgpr88], s[sgpr88], s[sgpr79]    
+s_branch label_startWhile  
+  
+// End of while loop
+label_endWhile:
+
+/*s_cmpk_gt_u32 s[sgpr71], 1
+s_cbranch_scc0 label_NGT1
+s_add_u32 s84, s84, s[sgpr88]
+s_branch label_spaceEnd  
+label_NGT1: 
+s_add_u32 s85, s85, s[sgpr88]
+label_spaceEnd: */
+
+// Compute id % remN (s[sgpr72])
+// Compute id / remN (s[sgpr72])
+.set remReg, sgpr71 // 71 = M, 72 = N
+  
+v_cvt_f32_u32 v10, s[remReg]                             // s[sgprWorkGroup1] = s[sgprWorkGroup1] / s84
+v_rcp_iflag_f32 v10, v10                           // s[sgprWorkGroup1] = s[sgprWorkGroup1] / s84
+v_cvt_f32_u32 v11, s[sgpr88]               // s[sgprWorkGroup1] = s[sgprWorkGroup1] / s84
+v_mul_f32 v10, v10, v11                            // s[sgprWorkGroup1] = s[sgprWorkGroup1] / s84
+v_cvt_u32_f32 v10, v10                             // s[sgprWorkGroup1] = s[sgprWorkGroup1] / s84
+v_mul_u32_u24 v11, v10, s[remReg]                        // s[sgprWorkGroup1] = s[sgprWorkGroup1] / s84
+v_sub_u32 v11, s[sgpr88], v11              // s[sgprWorkGroup1] = s[sgprWorkGroup1] / s84
+v_cmpx_eq_u32 exec, v11, s[remReg]                       // s[sgprWorkGroup1] = s[sgprWorkGroup1] / s84
+v_add_u32 v10, 1, v10                              // s[sgprWorkGroup1] = s[sgprWorkGroup1] / s84
+v_mov_b32 v11, 0                                   // s[sgprGSUSumIdx] = s[sgprWorkGroup1] % s84
+s_mov_b64 exec, -1                                 // Reset exec
+v_cmpx_gt_u32 exec, v11, s[remReg]                       // overflow happened in remainder
+v_sub_u32 v10, v10, 1                              // quotient - 1
+v_mul_u32_u24 v11, v10, s[remReg]                        // re-calculate remainder
+v_sub_u32 v11, s[sgpr73], v11              // re-calculate remainder
+s_mov_b64 exec, -1                                 // Reset exec
+v_readfirstlane_b32 s[sgpr73], v11          // remainder
+v_readfirstlane_b32 s[sgpr74], v10         // quotient
+
+// s[sgpr72]  
+//s_add_u32 s85, s85, s[sgpr73]
+//s_add_u32 s84, s84, s[sgpr74]
+
+// s[sgpr71]
+s_add_u32 s84, s84, s[sgpr73]
+s_add_u32 s85, s85, s[sgpr74]
+  
+s_mov_b32 s[sgprWorkGroup0], s84
+s_mov_b32 s[sgprWorkGroup1], s85  
+
+  
 /******************************************/
 /* Local Read Addresses                   */
 /******************************************/
