@@ -42,6 +42,7 @@ from Tensile.Common.GlobalParameters import defaultSolution, \
 from Tensile.SolutionStructs.Naming import getSolutionNameFull
 from Tensile.SolutionStructs.Problem import ProblemType
 from Tensile.Toolchain.Component import Assembler
+from Tensile.Components.CustomSchedule import hasCustomSchedule
 
 from .Utilities import reject, roundupRatio, pvar
 
@@ -411,6 +412,12 @@ class Solution(collections.abc.Mapping):
       state["reorderGRInstForDTVA"] = False
       state["reorderGRInstForDTVB"] = False
 
+    state["UsePLRPack"] = False
+    state["SwapGlobalReadOrder"] = False
+
+    hasCMS,_ = hasCustomSchedule(state)
+    state["UseCustomMainLoopSchedule"] = state["UseCustomMainLoopSchedule"] and hasCMS
+      
     # done
     state["AssignedProblemIndependentDerivedParameters"] = True
 

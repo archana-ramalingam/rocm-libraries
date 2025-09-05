@@ -43,6 +43,7 @@ from rocisa.enum import RegisterType
 from .KernelWriterModules import *
 from .Component import Component, LraTileProperties
 from .Components.Signature import UserArgumentsInfo
+from .Components.CustomSchedule import customDTLSchedule
 from .SolutionStructs import Solution, isPackedIndex
 from .AsmMemoryInstruction import MemoryInstruction
 from .Activation import ActivationModule
@@ -2034,6 +2035,18 @@ class KernelWriter(metaclass=abc.ABCMeta):
   # No Load Loop Body
   ##############################################################################
   def noLoadLoopBody( self, kernel, tensorParametersA, tensorParametersB, pack, isOptNLL, isNGLL, NLLfirst, NLLlast, NLLindex=0, NLLnum=1):
+    if kernel["UseCustomMainLoopSchedule"]:
+      module = Module()
+      if isNGLL:
+        module.add(SWaitCnt(dscnt=0, vlcnt=0, vscnt=-1, comment="Wait for all PGR to complete"))
+        module.add(SBarrier(comment=""))
+        module.add(TextBlock("MAINLOOP 0 0 1 1 0\n"))
+      else:
+        usePLR = 0 if self.states.numItersPLR > 0 else 1
+        module.add(SWaitCnt(dscnt=0, vlcnt=0, vscnt=-1, comment="Wait for all PGR to complete"))
+        module.add(SBarrier(comment=""))
+        module.add(TextBlock("MAINLOOP 0 0 %u 0 0\n"%usePLR))
+      return module
     module = Module("noLoadLoopBody")
     expand = kernel["ExpandPointerSwap"]
     lastuIdx = False
@@ -2695,6 +2708,256 @@ class KernelWriter(metaclass=abc.ABCMeta):
       module.add(self.closeLoop(kernel, tensorParametersA, tensorParametersB, self.states.unrollIdx, finalLoop, oddLabel=oddLabel))
     return module
 
+
+  def _loopBodyCustom( self, kernel, tensorParametersA, tensorParametersB, pack, lc, loopCopies, finalLoop, firstIter=False, dsWriteBA=False, grBA=False, isDTVGRSecondBuf=False, skipClose=False ):
+    module = Module("loopBody")
+    expand = kernel["ExpandPointerSwap"]
+
+    # not generate openLoop for firstIter
+    if not firstIter:
+      module.addComment2("Unrolled Loop %u/%u - Begin" % (lc+1, loopCopies))
+
+    module.addComment1("Begin Each Unroll: Check VGPR.checkin for INT8 LW")
+
+    # swap the order of global read (B->A)
+    # - swapAB (grBA=True)
+    # - isSwapGlobalReadOrderForDtvOrDtl is true
+    tensorParameters1st = tensorParametersA
+    tensorParameters2nd = tensorParametersB
+    tc1 = 'A'
+    tc2 = 'B'
+    if grBA==True or self.isSwapGlobalReadOrderForDtvOrDtl(kernel):
+      tensorParameters1st, tensorParameters2nd = tensorParameters2nd, tensorParameters1st
+      tc1, tc2 = tc2, tc1
+
+    # unrolled loop: global read A, B
+    # M0 update for directToLds
+    self.codes.dtlsM0UpdateA = self.directToLdsM0Update(kernel, 1, tensorParameters1st, True)
+    self.codes.dtlsM0UpdateB = self.directToLdsM0Update(kernel, 1, tensorParameters2nd, True)
+
+    g2lBufIdx1st = 0
+    if grBA==True or (kernel["DirectToVgpr%s"%tc1] and isDTVGRSecondBuf):
+      # use second buffer
+      g2lBufIdx1st = 1
+    self.codes.globalReadA = self.globalReadDo(kernel, 1, tensorParameters1st, unrollLoopIdx=lc, g2lBufIdx=g2lBufIdx1st)
+    g2lBufIdx2nd = 0
+    if grBA==True or (kernel["DirectToVgpr%s"%tc2] and isDTVGRSecondBuf):
+      # use second buffer
+      g2lBufIdx2nd = 1
+    self.codes.globalReadB = self.globalReadDo(kernel, 1, tensorParameters2nd, unrollLoopIdx=lc, g2lBufIdx=g2lBufIdx2nd)
+
+    # unrolled loop: increment global read addresses
+    self.codes.globalReadIncrements = self.globalReadIncrementAB(kernel, tensorParametersA, tensorParametersB, self.states.unrollIdx, 0)
+    globalReadIncACode  = self.codes.globalReadIncrements.findNamedItem("globalReadIncrementA")
+    globalReadIncBCode  = self.codes.globalReadIncrements.findNamedItem("globalReadIncrementB")
+
+    if not kernel["NoLdsWriteCode"]:
+      self.codes.localWriteA = self.localWriteDo(kernel, tensorParametersA)
+      self.codes.localWriteB = self.localWriteDo(kernel, tensorParametersB)
+    else:
+      self.codes.localWriteA = Module()
+      self.codes.localWriteB = Module()
+
+    # localWriteEndIter is used to determine which iteration to put sync
+    # if PGR=0, GR,LW,sync,LR will put at front of loop.
+    localWriteEndIter = kernel["LoopIters"] - self.states.numItersPLR - 1
+
+    # Schedule the global read, global read inc, and writes:
+    unrollLoopHeaderCodeScheduled = False
+    if not kernel["PrefetchGlobalRead"]:
+      unrollLoopHeaderCodeScheduled = True
+      self.makeSchedule(kernel, tensorParametersA, tensorParametersB, localWriteEndIter, firstIter=firstIter)
+      module.add(self.codes.unrollLoopHeader)
+
+    # unrolled loop: prefetch local
+    if self.states.numItersPLR and not kernel["PrefetchGlobalRead"]:
+      for plrIdx in range(0, self.states.numItersPLR):
+        pack[plrIdx] = Module()
+        for iui in range(0,kernel["InnerUnroll"]):
+          if iui*self.states.numReadsIterCoalescedA < kernel["InnerUnroll"]:
+            module.addComment1("prefetch local a")
+            localReadCodeA, packCodeA = self.localReadDo(kernel, plrIdx*self.states.numIterPerCoalescedReadA, iui*self.states.numReadsIterCoalescedA, 0, tensorParametersA)
+            module.add(localReadCodeA)
+            pack[plrIdx].add(packCodeA)
+          if iui*self.states.numReadsIterCoalescedB < kernel["InnerUnroll"]:
+            module.addComment1("prefetch local b")
+            localReadCodeB, packCodeB = self.localReadDo(kernel, plrIdx*self.states.numIterPerCoalescedReadB, iui*self.states.numReadsIterCoalescedB, 0, tensorParametersB)
+            module.add(localReadCodeB)
+            pack[plrIdx].add(packCodeB)
+
+          if iui*self.states.numReadsIterCoalescedA < kernel["InnerUnroll"]:
+            module.addComment0("local read increment a")
+            module.add(self.localReadInc(kernel, iui, tensorParametersA))
+          if iui*self.states.numReadsIterCoalescedB < kernel["InnerUnroll"]:
+            module.addComment0("local read increment b")
+            module.add(self.localReadInc(kernel, iui, tensorParametersB))
+
+    pflr     = self.states.numItersPLR  # how many pf already done above
+
+    ############################################################################
+    # unrolled loop: mac iterations
+    ############################################################################
+
+
+    mfmaCode = Module()
+    LRSwapA = Module()
+    LRSwapB = Module()
+    LWSwapA = Module()
+    LWSwapB = Module()
+    LRCodeA = []
+    LRCodeB = []
+    PackCodeA = []
+    PackCodeB = []
+
+    # double/quadruple the number of compute loop for each DepthU's worth of data read
+    for uIdx in range(0, kernel["LoopIters"]):
+      u = uIdx % kernel["LoopIters"]    #   u: index in compute loop (in contrast to the notion of global read loop)
+      LRCodeA.append(Module())
+      LRCodeB.append(Module())
+      PackCodeA.append(Module())
+      PackCodeB.append(Module())
+      if u==0: # if at start of subloop...
+        # ...update local write code
+        if not kernel["NoLdsWriteCode"]:
+          if dsWriteBA:
+            self.codes.localWriteA = self.localWriteDo(kernel, tensorParametersB, swapAB=1)
+            self.codes.localWriteB = self.localWriteDo(kernel, tensorParametersA, swapAB=1)
+          else:
+            self.codes.localWriteA = self.localWriteDo(kernel, tensorParametersA)
+            self.codes.localWriteB = self.localWriteDo(kernel, tensorParametersB)
+        else:
+          self.codes.localWriteA = Module()
+          self.codes.localWriteB = Module()
+
+        if not unrollLoopHeaderCodeScheduled:
+          self.makeSchedule(kernel, tensorParametersA, tensorParametersB, localWriteEndIter, firstIter=firstIter, lastLoop=False, lastLc=(lc==loopCopies-1))
+          module.add(self.codes.unrollLoopHeader)
+
+      # which loop iteration to reset the LRO,
+      # note if PLR=0, isResetLroIter is False for all u
+      isResetLroIter = (u == localWriteEndIter)
+      isSwapAndResetLwoIter = isResetLroIter
+      isSwapLroIter = isResetLroIter
+      if kernel["ScheduleIterAlg"] == 3:
+        isSwapAndResetLwoIter = (u == self.states.lwEndMfmaIndex//(self.states.numMfmaPerIter))
+      extraComment = ""
+      if isResetLroIter:
+        extraComment += " (reset local read pointers iteration) "
+      if isSwapAndResetLwoIter:
+        extraComment += " (swap and reset local write pointers iteration) "
+      if isSwapLroIter:
+        extraComment += " (swap local read pointers iteration) "
+
+      module.addComment1("iter %u%s"%(u,extraComment))
+      plrIdx = (u+pflr) % self.states.numVgprBuffer
+      plrIdxDTV = (u+pflr) % kernel["LoopIters"]
+
+      # vregSetIdx for DTV
+      # use oppsite side of GR buffer
+      vregSetIdxMFMA = 1 if (kernel["DirectToVgprA"] or kernel["DirectToVgprB"]) and (not isDTVGRSecondBuf) else 0
+      vregSetIdxLR = vregSetIdxMFMA
+      if kernel["LoopIters"] > 1 and u+pflr >= kernel["LoopIters"]:
+        # use next vregSet for the last loopIter (exception: LoopIters==1)
+        # LoopIters==1 case, local read is for the current iteration and not for the next iteration
+        vregSetIdxLR = (vregSetIdxLR + 1) % loopCopies
+        # final loop case, use vregSetIdx for noLoadLoop (NGLL(PGR2) or NLL(PGR1))
+        if finalLoop:
+          # finalLoop case, this is for NoLoadLoop (NGLL(PGR2) or NLL(PGR1))
+          # PGR2 case, next is NGLL. Use first set
+          # PGR1 case, next is NLL. Use second set
+          vregSetIdxLR = 0 if kernel["PrefetchGlobalRead"] == 2 else 1
+
+      localReads = Module()
+      localReadsA = Module()
+      localReadsB = Module()
+
+      pointerLWCode = Module()
+      pointerLRCode = Module()
+      waitCode = Module()  # may be overwritten (not added to) below
+      macIterCode = Module()
+      waitLWCode = Module()
+      syncCode = Module()
+
+      hasLiveLdsData = kernel["PrefetchGlobalRead"]
+      # reads for current loop are done in previous iteration because of wider local read
+      doReadA = (u < kernel["LoopIters"]/self.states.numIterPerCoalescedReadA - self.states.numItersPLR)
+      doReadB = (u < kernel["LoopIters"]/self.states.numIterPerCoalescedReadB - self.states.numItersPLR)
+      # reads for next loop
+      doReadA = doReadA or (hasLiveLdsData and u > localWriteEndIter)
+      doReadB = doReadB or (hasLiveLdsData and u > localWriteEndIter)
+      for iui in range(0,kernel["InnerUnroll"]):
+        doReadA = doReadA and iui*self.states.numReadsIterCoalescedA < kernel["InnerUnroll"]
+        doReadB = doReadB and iui*self.states.numReadsIterCoalescedB < kernel["InnerUnroll"]
+        if doReadA:
+          localReads.addComment1("local read a")
+          bufferIdx = plrIdx*self.states.numIterPerCoalescedReadA
+          if self.states.packDTVA or self.states.convDTVA:
+            # DTV + pack or input conversion case, offset bufferIdx for local read packing instructions
+            bufferIdx = plrIdxDTV*self.states.numIterPerCoalescedReadA + vregSetIdxLR * kernel["LoopIters"]
+          localReadCodeA, packCodeA = self.localReadDo(kernel, bufferIdx, iui*self.states.numReadsIterCoalescedA, 0, tensorParametersA)
+          localReads.add(localReadCodeA)
+          localReadsA.add(localReadCodeA)
+          pack[plrIdx*self.states.numIterPerCoalescedReadA].add(packCodeA)
+          LRCodeA[uIdx].add(localReadCodeA)
+          PackCodeA[uIdx].add(packCodeA)
+        if doReadB:
+          localReads.addComment1("local read b")
+          bufferIdx = plrIdx*self.states.numIterPerCoalescedReadB
+          if self.states.packDTVB or self.states.convDTVB:
+            # DTV + pack or input conversion case, offset bufferIdx for local read packing instructions
+            bufferIdx = plrIdxDTV*self.states.numIterPerCoalescedReadB + vregSetIdxLR * kernel["LoopIters"]
+          localReadCodeB, packCodeB = self.localReadDo(kernel, bufferIdx, iui*self.states.numReadsIterCoalescedB, 0, tensorParametersB)
+          localReads.add(localReadCodeB)
+          localReadsB.add(localReadCodeB)
+          pack[plrIdx*self.states.numIterPerCoalescedReadB].add(packCodeB)
+          LRCodeB[uIdx].add(localReadCodeB)
+          PackCodeB[uIdx].add(packCodeB)
+        # Don't increment the LRO if we are going to reset them below:
+        if not isResetLroIter or iui != kernel["InnerUnroll"]-1:
+          if doReadA:
+            localReads.addComment1("local read increment a")
+            localReads.add(self.localReadInc(kernel, iui, tensorParametersA))
+          if doReadB:
+            localReads.addComment1("local read increment b")
+            localReads.add(self.localReadInc(kernel, iui, tensorParametersB))
+
+      if kernel["PrefetchGlobalRead"]:
+        if isSwapAndResetLwoIter: # ResetLroIter
+          if kernel["ExpertSchedulingMode"] > 0:
+            pointerLWCode.add(SWaitAlu(vm_vsrc=0, comment="wait for local read to vgpr complete"))
+
+          # local write for next iter, used to have local writes here
+          LWSwapA.add(self.localWriteSwapOffsets(kernel, expand, tensorParametersA))
+          LWSwapB.add(self.localWriteSwapOffsets(kernel, expand, tensorParametersB))
+
+        if isSwapLroIter: # ResetLroIter
+          if kernel["ExpertSchedulingMode"] > 0:
+            pointerLRCode.add(SWaitAlu(vm_vsrc=0, comment="wait for local read to vgpr complete"))
+          LRSwapA.add(self.localReadSwapOffsets(kernel, expand, tensorParametersA))
+          LRSwapB.add(self.localReadSwapOffsets(kernel, expand, tensorParametersB))
+
+      if isResetLroIter: # ResetLroIter
+        pointerLRCode.addComment1("local read init pointers a")
+        pointerLRCode.add(self.localReadInitPointers(kernel, tensorParametersA, tensorParametersA))
+        pointerLRCode.addComment1("local read init pointers b")
+        pointerLRCode.add(self.localReadInitPointers(kernel, tensorParametersA, tensorParametersB))
+
+      luIdx = u % self.states.numVgprBuffer # local to use for MACs
+      mfmaCode.add(self.mfmaIter(kernel, tensorParametersA, tensorParametersB, u, kernel["InnerUnroll"], vregSetIdxMFMA, unrollLoopIdx=lc, unrollIdx = u))
+
+      pack[luIdx] = Module()
+
+    optSchedule, numCodePath = customDTLSchedule(self, kernel, tensorParametersA, tensorParametersB, globalReadIncACode, globalReadIncBCode, \
+                                    LRCodeA, PackCodeA, LRCodeB, PackCodeB, LRSwapA, LRSwapB, self.codes.globalReadA, self.codes.globalReadB, \
+                                    LWSwapA, LWSwapB, mfmaCode, \
+                                    self.closeLoop(kernel, tensorParametersA, tensorParametersB, self.states.unrollIdx, False))
+    module.add(optSchedule)
+    module.add(self.simdSpecDispatch(kernel, numCodePath))
+
+    return module
+
+
+
   ##############################################################################
   # Kernel Body
   ##############################################################################
@@ -2841,6 +3104,25 @@ class KernelWriter(metaclass=abc.ABCMeta):
               if iui*self.states.numReadsIterCoalescedB < kernel["InnerUnroll"]:
                 module.addComment1("local read inc b")
                 module.add(self.localReadInc(kernel, iui, tensorParametersB))
+              if kernel["UsePLRPack"]:
+                module.add(SWaitCnt(dscnt=0, vlcnt=-1, vscnt=-1, comment="Wait for LRA and LRB to complete"))
+                module.add(pack[plrIdx])
+      else:
+        localReadCodeA = Module()
+        localReadCodeB = Module()
+        for espi in range(0, 1):
+          localReadCodeA_, packCodeA_ = self.localReadDo(kernel, 0, 0, espi, tensorParametersA)
+          localReadCodeB_, packCodeB_ = self.localReadDo(kernel, 0, 0, espi, tensorParametersB)
+          localReadCodeA.add(localReadCodeA_)
+          localReadCodeB.add(localReadCodeB_)
+        localReadCodeA = localReadCodeA.flatitems()
+        localReadCodeB = localReadCodeB.flatitems()
+        for lri in range(len(localReadCodeA) // 2):
+          module.add(localReadCodeA[lri])
+        for lri in range(len(localReadCodeB) // 2):
+          module.add(localReadCodeB[lri])
+        module.add(SWaitCnt(dscnt=0, vlcnt=-1, vscnt=-1, comment="Wait for LRA and LRB to complete"))
+
       module.add(self.closeSumAtLeastUnroll(kernel, tensorParametersA, tensorParametersB, prefetch=True, isOptNLL=False, isNGLL=False))
 
     loopCopies = 2 if expand else 1
@@ -2883,8 +3165,10 @@ class KernelWriter(metaclass=abc.ABCMeta):
         isDTVGRSecondBuf = True if isDTV and lc == 0 else False
         # loop body code generation
         finalLoop = lc == loopCopies - 1
-        module.add(self._loopBody( kernel, tensorParametersA, tensorParametersB, pack, lc, loopCopies, finalLoop, isDTVGRSecondBuf=isDTVGRSecondBuf ))
-
+        if kernel["UseCustomMainLoopSchedule"]:
+          module.add(self._loopBodyCustom( kernel, tensorParametersA, tensorParametersB, pack, lc, loopCopies, finalLoop, isDTVGRSecondBuf=isDTVGRSecondBuf ))
+        else:
+          module.add(self._loopBody( kernel, tensorParametersA, tensorParametersB, pack, lc, loopCopies, finalLoop, isDTVGRSecondBuf=isDTVGRSecondBuf ))
     if kernel["ExpertSchedulingMode"] > 0:
       module.add(SSetRegIMM32B32(dst=HWRegContainer(reg="26", value=[0,2]), src=0x0, comment="enable hardware dependency checking"))
 
@@ -3217,6 +3501,8 @@ class KernelWriter(metaclass=abc.ABCMeta):
         if item[0] != -1:
           module.add(self.tailLoopFreeVgpr(item[0], item[1]))
 
+      module.addComment0("Pool size after tail loop: %u"%self.vgprPool.size())
+
       # Check in VGPR for DTV
       for item in vDtvResources:
         if item[0] != -1:
@@ -3453,6 +3739,8 @@ class KernelWriter(metaclass=abc.ABCMeta):
       self.states.numVgprBuffer = kernel["LoopIters"]
     else:
       self.states.numVgprBuffer = kernel["PrefetchLocalRead"] + 1
+
+    #self.states.numVgprBuffer = 1
 
     if kernel["ClusterLocalRead"]:
       self.states.numVgprBufferPackA = kernel["LoopIters"]
@@ -3872,6 +4160,8 @@ class KernelWriter(metaclass=abc.ABCMeta):
       #jgolds bpeCinternal because we are allocating accumulation registers here
       self.states.c.numVgprValu = (kernel["ThreadTile0"]*kernel["ThreadTile1"]*self.states.bpeCinternal)//self.states.bpr
 
+
+
       # pack or input conversion DTV case, need double buffer (LoopIters * 2)
       numVgprBufferA = self.states.numVgprBuffer if not (self.states.packDTVA or self.states.convDTVA) else kernel["LoopIters"] * 2
       numVgprBufferB = self.states.numVgprBuffer if not (self.states.packDTVB or self.states.convDTVB) else kernel["LoopIters"] * 2
@@ -3889,11 +4179,11 @@ class KernelWriter(metaclass=abc.ABCMeta):
         self.states.b.numVgprValuPerBlock = 0
 
       self.states.a.numVgprValu = self.states.a.numVgprValuPerBlock * valuBlocksA
-      if self.states.lrvwTileA > 1 and tensorParametersA["bpe"] < 4:
+      if self.states.lrvwTileA > 1 and tensorParametersA["bpe"] < 4 and not kernel["UsePLRPack"]:
         self.states.a.numVgprValu = self.states.a.numVgprValuPerBlock * kernel["InnerUnroll"]
 
       self.states.b.numVgprValu = self.states.b.numVgprValuPerBlock * valuBlocksB
-      if self.states.lrvwTileB > 1 and tensorParametersB["bpe"] < 4:
+      if self.states.lrvwTileB > 1 and tensorParametersB["bpe"] < 4 and not kernel["UsePLRPack"]:
         self.states.b.numVgprValu = self.states.b.numVgprValuPerBlock * kernel["InnerUnroll"]
 
     else: # mac instruction
@@ -4276,6 +4566,8 @@ class KernelWriter(metaclass=abc.ABCMeta):
         if self.states.packDTVA:
           # pack DTV case, double the number
           numVgprValuPackA *= 2
+        elif kernel["UsePLRPack"]:
+          numVgprValuPackA //= 2
       else:
         numVgprValuPackA = self.states.a.numVgprValuPerBlock * kernel["InnerUnroll"] * self.states.numVgprBufferPackA * (int(4/tensorParametersA["bpeDS"]) - 1)
     vgprIdx += numVgprValuPackA
@@ -4311,6 +4603,8 @@ class KernelWriter(metaclass=abc.ABCMeta):
         if self.states.packDTVB:
           # pack DTV case, double the number
           numVgprValuPackB *= 2
+        elif kernel["UsePLRPack"]:
+          numVgprValuPackB //= 2
       else:
         numVgprValuPackB = self.states.b.numVgprValuPerBlock * kernel["InnerUnroll"] * self.states.numVgprBufferPackB * (int(4/tensorParametersB["bpeDS"]) - 1)
     vgprIdx += numVgprValuPackB
@@ -5494,6 +5788,13 @@ class KernelWriter(metaclass=abc.ABCMeta):
   ##############################################################################
   @abc.abstractmethod
   def waveSplitKReduction(self, kernel):
+    return ""
+
+  ##############################################################################
+  # SIMD Specialized Dispatch
+  ##############################################################################
+  @abc.abstractmethod
+  def simdSpecDispatch(self, kernel, numCodePath):
     return ""
 
   ##############################################################################
