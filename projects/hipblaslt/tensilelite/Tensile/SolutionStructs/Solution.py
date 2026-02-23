@@ -272,6 +272,8 @@ class Solution(collections.abc.Mapping):
 
   ########################################
   # assign tile sizes
+  #
+  # We can probably add some subtile logic here, like rejecting unsupported tile configs.
   @staticmethod
   def assignProblemIndependentDerivedParameters(state, printRejectionReason: bool, isaInfoMap: Dict[str, IsaInfo]):
 
@@ -482,6 +484,11 @@ class Solution(collections.abc.Mapping):
   #   state[NumLoadsPerpendicularA]
   #   state[LSCA]
   #   state[LSPA]
+  #
+  # This is the start of the global read calcs. We are calculating how many loads we need to issue
+  # per wave to read the entire Macro tile.
+  # perpendicular dim refers to the dim with strides, parallel dim refers to contiguous/fast moving dim.
+  # For subtiles, this logic may not be needed
   @staticmethod
   def setGlobalLoadTileDimClassic(state, tc, numLoads, totalVectorsCoalesced, totalElementsPerp, depthU, printRejectionReason: bool):
 

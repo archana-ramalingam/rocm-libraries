@@ -3392,6 +3392,7 @@ class KernelWriter(metaclass=abc.ABCMeta):
 
     self.removeSgprVarFromPool("SrdWS")
 
+    # Main entry point for tail loop code
     if not kernel["NoTailLoop"]:
       ########################################
       # Tail Loop
@@ -3894,6 +3895,7 @@ class KernelWriter(metaclass=abc.ABCMeta):
   ##############################################################################
   # Init Kernel
   ##############################################################################
+  # SGPR/VGPR allocation logic happens in here, we probably want to add to this?
   def _initKernel(self, kernel, tensorParametersA, tensorParametersB):
     assert kernel["KernelLanguage"] == "Assembly"
     self.language   = "ASM"
@@ -3904,6 +3906,8 @@ class KernelWriter(metaclass=abc.ABCMeta):
 
     self.consts = ConstValues()
     self.states = StateValues(version=version, kernel=kernel, kernelName=getKernelNameMin(kernel, self.debugConfig.splitGSU))
+
+    # If we want to track sgpr/vgpr for a subtile, we probably need to have a separate class/structure that tracks this information
     self.vgprs  = StateVgprs()
     self.sgprs  = collections.OrderedDict()
     self.codes  = CodeModules()
@@ -4788,6 +4792,7 @@ class KernelWriter(metaclass=abc.ABCMeta):
     ####################################
     # VGPR Assignment
     ####################################
+    # Start of VGPR allocation logic - this will need to be updated
     vgprIdx = 0
     self.states.totalAgprs      = 0
     self.states.totalMixedAgprs = 0
@@ -4819,6 +4824,8 @@ class KernelWriter(metaclass=abc.ABCMeta):
     # Move to the front and bypass to tail loop
     self.states.startVgprMisc = vgprIdx
 
+    # Looks like buffer load vgpr offsets are calculated here. I'm not sure if its easy to have a
+    # separate code-path for this..
     # BufferLoad:
     # Uses a resource descriptor (SRD) which is stored in 4 SGPRs and thus shared by all work-items.
     # Each work-item also uses  a unique 32-bit offset into vgprGlobalReadOffset.  These offsets are set when
@@ -4937,6 +4944,8 @@ class KernelWriter(metaclass=abc.ABCMeta):
             + max(self.states.a.numVgprValu + numVgprValuPackA, self.states.a.numVgprG2LAllocated)
 
     # TODO: alignment hack, figure out a better solution
+    # Probably with vgpr buffers, since we don't require contiguous allocation
+    # it may solve the issue mentioned here?
     if(self.states.archCaps["VgprBank"]):
       residual = (vgprIdx % 4)
       if (residual % 2) == 0:

@@ -142,6 +142,7 @@ def makeValidMFMA():
                                 )
     return validMFMA
 
+# We can add subtile parameter in this file, and use a similar check for valid mfma like below
 @lru_cache
 def makeValidSMFMA():
     validSMFMA = {}
