@@ -6980,6 +6980,7 @@ class KernelWriterAssembly(KernelWriter):
   ##############################################################################
   # MFMA Iteration
   ##############################################################################
+  # MFMA code generated here. We will need to implement version from pov of subtiles.
   def mfmaIter(self, kernel, tPA, tPB, u, innerUnroll, vregSetIdx, unrollLoopIdx = 0, unrollIdx = 0, tail = False, firstIter = False, postShiftK = Module()):
     imod = Module("mi")
     shiftK = Module("shiftK")
@@ -9048,6 +9049,7 @@ class KernelWriterAssembly(KernelWriter):
   ##############################################################################
   # Global Read: Do It A/B
   ##############################################################################
+  # We will to implement these from pov of subtiles
   def globalReadDo(self, kernel, mode, tP, unrollLoopIdx=-1, g2lBufIdx=0, \
                    doTailOpt = 0, optParams = None, krTailForceDisable=False):
     tc = tP["tensorChar"]

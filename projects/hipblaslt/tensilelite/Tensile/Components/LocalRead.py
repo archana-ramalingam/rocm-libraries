@@ -1129,6 +1129,7 @@ class LocalReadMFMA(LocalRead):
                             # indexTranpose case, disable index conversion for local read
                             destVgpr = self.getVgprForEmu(writer, kernel, tc, bufferIdx, iui, index, lrvwTile, vgprLen=numVgpr, dst=False, localRead=True)
 
+                        # DS read code is created here, this module loops through all ds reads needed in the loop subiteration.
                         localReadCodeT.add(LocalReadX(dst=destVgpr, src=srcAddr, ds=ds, comment=comment))
                         # TODO - handle vector-load
                         with writer.allocTmpSgpr(1) as tmpSgprInfo:

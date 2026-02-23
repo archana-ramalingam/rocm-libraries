@@ -145,6 +145,7 @@ class LraTileAssignmentMFMA(LraTileAssignment):
 
         return module
 
+    # Local read vgpr offset calculation done here
     def LraTileAssignmentCode(self, writer, kernel, tP, tReg, kReg, tmpVgprRes, dividendReg="Serial", isDTVAB=False):
         module = Module("LraTileAssignmentCode")
 

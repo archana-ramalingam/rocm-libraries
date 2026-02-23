@@ -627,6 +627,8 @@ class KernelWriter(metaclass=abc.ABCMeta):
   # returns: a Module with the combined, optimally scheduled
   #  localReadCode + otherCode
   ##############################################################################
+  # Scheduling code starts here, it takes other code blocks needed in the main loop (stored in modules) and interleaves
+  # them into a single code-block (module).
   def _makeSubIterSchedule(self, kernel, tPA, tPB, localReadCode, iteration, pointerLWCode, pointerLRCode, waitCode, macIterCode, \
       waitLWCode = Module(), syncCode = Module(), packCode = Module(), prevIterCode = Module(), NLLlast = False, \
                    tailloopInNll = False, isNLLorNGLL=False):
@@ -3029,6 +3031,7 @@ class KernelWriter(metaclass=abc.ABCMeta):
   ##############################################################################
   # Kernel Body
   ##############################################################################
+  # Main entry point for kernel
   def kernelBody( self, kernel, tensorParametersA, tensorParametersB ):
     expand = kernel["ExpandPointerSwap"]
     self.dontAppendCode = False
@@ -3047,6 +3050,7 @@ class KernelWriter(metaclass=abc.ABCMeta):
 
     module = Module("body")
     module.add(Label("ASM_Start", "Main body of the asm kernel"))
+    # Main place where register allocation is done
     module.add(self.defineAndResources(kernel, tensorParametersA, tensorParametersB, tPM))
 
     # Initialize stream-k loop
@@ -3061,6 +3065,8 @@ class KernelWriter(metaclass=abc.ABCMeta):
     loopComponent = Component.PersistentLoop.find(self)
 
     module.add(loopComponent.openPersistentLoop(self, kernel))
+    # A/B matrix offset calculations for each workgroup
+    # Also workgroup id swizzling (WGM-related algorithms
     module.add(self.setupNewTile(kernel, tensorParametersA, tensorParametersB, isOptNLL=False))
 
     if self.do["executeToPrefetchEnd"]:
