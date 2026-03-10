@@ -3505,6 +3505,7 @@ class KernelWriter(metaclass=abc.ABCMeta):
       # SrdD/SrdC are used starting now, remove from sgpr pool
       self.removeSgprVarFromPool("SrdD")
       self.removeSgprVarFromPool("SrdC")
+      self.removeSgprVarFromPool("SrdWS")
       module.add(self.globalWriteWorkGroupInit(kernel))
       #if self.states.doShadowInit == 2:
       #  module.add(self.initC(kernel)) # initC while waiting for global reads
@@ -3551,7 +3552,7 @@ class KernelWriter(metaclass=abc.ABCMeta):
     module.add(lraTileAssignmentScaleSwizzled(self, kernel))
 
 
-
+    module.add(self.calculateLoopNumIter(kernel, tensorParametersA, tensorParametersB, self.states.unrollIdx))
 
 
 
@@ -3615,6 +3616,7 @@ class KernelWriter(metaclass=abc.ABCMeta):
       if not self.states.doShadowInit:
         self.removeSgprVarFromPool("SrdD")
         self.removeSgprVarFromPool("SrdC")
+        self.removeSgprVarFromPool("SrdWS")
         module.add(self.globalWriteWorkGroupInit(kernel))
 
       ####################################
