@@ -348,7 +348,9 @@ std::vector<float> generateMXInput(hipDataType                dataType,
         opt.initMode = DataInitMode(TrigonometricFromFloat{});
 
     // Map scaleInitMethod string to ScaleInitMode
-    if(scaleInitMethod == "MXScaleBlockSerial")
+    if(scaleInitMethod == "MXScaleOnes")
+        opt.scaleInitMode = DGen::ScaleOnes{};
+    else if(scaleInitMethod == "MXScaleBlockSerial")
         opt.scaleInitMode = DGen::ScaleBlockSerial{};
     else if(scaleInitMethod == "MXScaleSparseBlock")
         opt.scaleInitMode = DGen::ScaleSparseBlock{};

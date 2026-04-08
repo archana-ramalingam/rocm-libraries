@@ -1800,6 +1800,8 @@ namespace TensileLite
         {
             switch(mode)
             {
+            case InitMode::One:
+                return "MXScaleOnes";
             case InitMode::MXScaleBlockSerial:
                 return "MXScaleBlockSerial";
             case InitMode::MXScaleSparseBlock:
@@ -1903,6 +1905,8 @@ namespace TensileLite
 
                 auto initMethodA = InitModeToMXInitMethod(
                     m_vdata[ContractionProblemGemm::TENSOR::A].init);
+                auto scaleInitMethodA = InitModeToMXScaleInitMethod(
+                    m_vdata[ContractionProblemGemm::TENSOR::MXSA].init);
 
                 // Zero the scale buffer; padding beyond the valid region stays 0x00
                 std::memset(pristineMXScaleA.cpuInput.valid.get(),
@@ -1988,6 +1992,8 @@ namespace TensileLite
 
                 auto initMethodB = InitModeToMXInitMethod(
                     m_vdata[ContractionProblemGemm::TENSOR::B].init);
+                auto scaleInitMethodB = InitModeToMXScaleInitMethod(
+                    m_vdata[ContractionProblemGemm::TENSOR::MXSB].init);
 
                 // Zero the scale buffer; padding beyond the valid region stays 0x00
                 std::memset(pristineMXScaleB.cpuInput.valid.get(),

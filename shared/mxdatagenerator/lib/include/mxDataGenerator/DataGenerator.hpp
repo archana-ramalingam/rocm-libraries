@@ -173,8 +173,16 @@ namespace DGen
         }
     };
 
+    struct ScaleOnes
+    {
+        std::string toString() const
+        {
+            return "ScaleOnes";
+        }
+    };
+
     using ScaleInitMode
-        = std::variant<std::monostate, ScaleBlockSerial, ScaleSparseBlock, ScaleSparseBlockRandom>;
+        = std::variant<std::monostate, ScaleBlockSerial, ScaleSparseBlock, ScaleSparseBlockRandom, ScaleOnes>;
 
     inline std::string toString(DataInitMode const& initMode)
     {
@@ -304,6 +312,7 @@ namespace DGen
         void generate_scale_block_serial(const std::vector<index_t>& size);
         void generate_scale_sparse_block(const std::vector<index_t>& size);
         void generate_scale_sparse_block_random(const std::vector<index_t>& size);
+        void generate_scale_ones();
 
         void setGenerator(int numThreads);
     };
@@ -1841,7 +1850,8 @@ namespace DGen
             overload{[](const std::monostate&) {},
                      [&](const ScaleBlockSerial&) { generate_scale_block_serial(size); },
                      [&](const ScaleSparseBlock&) { generate_scale_sparse_block(size); },
-                     [&](const ScaleSparseBlockRandom&) { generate_scale_sparse_block_random(size); }},
+                     [&](const ScaleSparseBlockRandom&) { generate_scale_sparse_block_random(size); },
+                     [&](const ScaleOnes&) { generate_scale_ones(); }},
             m_options.scaleInitMode);
     }
 
@@ -1930,5 +1940,15 @@ namespace DGen
         for(index_t r = rStart; r < rEnd; r++)
             for(index_t c = cStart; c < cEnd; c++)
                 m_scaleBytes[r + c * scaleRows] = coin(m_gen[0]) ? 0x7F : 0x00;
+    }
+
+    template <typename DTYPE>
+    void DataGenerator<DTYPE>::generate_scale_ones()
+    {
+        if(!isScaled<DTYPE>() || m_scaleDesc.array_size == 0)
+            return;
+
+        // 0x7F = exponent 127 = 2^(127-127) = 2^0 = 1.0 in E8M0 format
+        std::memset(m_scaleBytes.data(), 0x7F, m_scaleBytes.size());
     }
 }
