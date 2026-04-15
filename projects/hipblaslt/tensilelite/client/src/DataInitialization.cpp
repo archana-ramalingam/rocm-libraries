@@ -1905,16 +1905,13 @@ namespace TensileLite
 
                 auto initMethodA = InitModeToMXInitMethod(
                     m_vdata[ContractionProblemGemm::TENSOR::A].init);
-                auto scaleInitMethodA = InitModeToMXScaleInitMethod(
-                    m_vdata[ContractionProblemGemm::TENSOR::MXSA].init);
+                auto mxsaInit = m_vdata[ContractionProblemGemm::TENSOR::MXSA].init;
+                auto scaleInitMethodA = InitModeToMXScaleInitMethod(mxsaInit);
 
                 // Zero the scale buffer; padding beyond the valid region stays 0x00
                 std::memset(pristineMXScaleA.cpuInput.valid.get(),
                             0x00,
                             problem.mxsa().totalAllocatedElements());
-
-                auto mxsaInit = m_vdata[ContractionProblemGemm::TENSOR::MXSA].init;
-                auto scaleInitMethodA = InitModeToMXScaleInitMethod(mxsaInit);
 
                 for(size_t b = 0; b < batchCount; b++)
                 {
@@ -1992,16 +1989,13 @@ namespace TensileLite
 
                 auto initMethodB = InitModeToMXInitMethod(
                     m_vdata[ContractionProblemGemm::TENSOR::B].init);
-                auto scaleInitMethodB = InitModeToMXScaleInitMethod(
-                    m_vdata[ContractionProblemGemm::TENSOR::MXSB].init);
+                auto mxsbInit = m_vdata[ContractionProblemGemm::TENSOR::MXSB].init;
+                auto scaleInitMethodB = InitModeToMXScaleInitMethod(mxsbInit);
 
                 // Zero the scale buffer; padding beyond the valid region stays 0x00
                 std::memset(pristineMXScaleB.cpuInput.valid.get(),
                             0x00,
                             problem.mxsb().totalAllocatedElements());
-
-                auto mxsbInit = m_vdata[ContractionProblemGemm::TENSOR::MXSB].init;
-                auto scaleInitMethodB = InitModeToMXScaleInitMethod(mxsbInit);
 
                 for(size_t b = 0; b < batchCount; b++)
                 {
