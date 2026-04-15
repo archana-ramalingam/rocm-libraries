@@ -1953,10 +1953,10 @@ namespace TensileLite
                     {
                         size_t scaleRows = rows / problem.mxBlockA();
                         size_t scaleCols = cols;
-                        size_t scaleSize = problem.mxsa().totalAllocatedElements();
+                        size_t logicalSize = scaleRows * scaleCols;
                         auto*  scalePtr
                             = static_cast<uint8_t*>(pristineMXScaleA.cpuInput.valid.get());
-                        std::vector<uint8_t> scaleVec(scalePtr, scalePtr + scaleSize);
+                        std::vector<uint8_t> scaleVec(scalePtr, scalePtr + logicalSize);
                         scaleVec
                             = DGen::preSwizzleScalesGFX950(scaleVec, {scaleCols, scaleRows});
                         std::memcpy(scalePtr, scaleVec.data(), scaleVec.size());
@@ -2037,10 +2037,10 @@ namespace TensileLite
                     {
                         size_t scaleRows = rows / problem.mxBlockB();
                         size_t scaleCols = cols;
-                        size_t scaleSize = problem.mxsb().totalAllocatedElements();
+                        size_t logicalSize = scaleRows * scaleCols;
                         auto*  scalePtr
                             = static_cast<uint8_t*>(pristineMXScaleB.cpuInput.valid.get());
-                        std::vector<uint8_t> scaleVec(scalePtr, scalePtr + scaleSize);
+                        std::vector<uint8_t> scaleVec(scalePtr, scalePtr + logicalSize);
                         scaleVec
                             = DGen::preSwizzleScalesGFX950(scaleVec, {scaleCols, scaleRows});
                         std::memcpy(scalePtr, scaleVec.data(), scaleVec.size());
