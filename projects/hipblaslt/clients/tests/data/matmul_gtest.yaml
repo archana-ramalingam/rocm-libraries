@@ -2636,6 +2636,8 @@ Tests:
   beta: [ 0.0, 1.0 ]
   gpu_arch: '90a'
 
+# Subtile MXFP4 tests (gfx950)
+# All use preswizzled scales (scaleA/B: 1001 = Block_32_UE8M0_32_8_EXT)
 # Build: ./install.sh -dck -a gfx950
 # Run: ./hipblaslt-test --gtest_filter="*subtile_fp4*"
 
@@ -2870,6 +2872,5 @@ Tests:
   norm_check: 1
   requested_solution_num: 10
   gpu_arch: '950'
-
 
 ...
